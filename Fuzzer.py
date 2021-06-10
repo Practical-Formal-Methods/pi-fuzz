@@ -26,41 +26,35 @@ class Fuzzer:
         cur_time = fuzz_start
 
         random_seed = 0
+        warnings = []
         while cur_time - fuzz_start < TIME_BOUND:
-            self.game.env.reset(random_seed=random_seed)
 
             self.epochs += 1
             fuzz_seed = self.schedule.choose(self.pool)
-            if fuzz_seed is None:
-                state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
-                fuzz_seed = Seed(state_nn, state_env)
-
             self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
-
             num_warning = self.oracle.explore(fuzz_seed, random_seed)
+            warnings.append(num_warning)
 
             random_seed += 1
             cur_time = time.time()
 
-            print(cur_time - fuzz_start, num_warning)
-
+        return warnings
 
     def populate_pool(self):
-        for _ in range(20):
-            self.game.env.reset()
+        for _ in range(30):
+            self.game.env.reset(None)
             state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
             seed = Seed(state_nn, state_env)
             self.pool.append(seed)
 
-        for cnt in range(MUTATION_BUDGET):
+        for cnt in range(POOL_BUDGET):
             seed = self.schedule.choose(self.pool)
-
-            cand_nn, cand_env = self.mutator.mutate(seed)
+            cand_env, cand_nn = self.mutator.mutate(seed)
             if cand_nn is None: continue
 
             d_shortest = np.inf
-            for sd in self.pool:
-                dist = np.linalg.norm(cand_nn - sd.data, ord=2)
+            for ex_sd in self.pool:
+                dist = np.linalg.norm(cand_nn - ex_sd.data, ord=2)
                 if dist < d_shortest:
                     d_shortest = dist
 

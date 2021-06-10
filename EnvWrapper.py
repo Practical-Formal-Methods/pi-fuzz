@@ -28,7 +28,7 @@ class Wrapper():
         print('Environment created.')
 
     # @profile
-    def run_pol_fuzz(self, init_state, lahead_seq=None, mode="quantitative"):  # policy fuzzer
+    def run_pol_fuzz(self, init_state, lahead_seq=None, mode="quantitative"):
         if lahead_seq is None:
             lahead_seq = []
         next_state = init_state
@@ -51,7 +51,7 @@ class Wrapper():
             if done:
                 total_reward = self.env.get_discounted_return()
                 if mode == "qualitative":
-                    total_reward = int(total_reward < 0)
+                    total_reward = int(total_reward > 0)
                 return total_reward, dev_state, full_play
 
             idx += 1

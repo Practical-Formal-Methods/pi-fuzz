@@ -31,16 +31,16 @@ class LookAheadOracle(Oracle):
     def explore(self, fuzz_seed, random_seed):
         super().set_deviations()
         num_warning = 0
-        agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
-
+        agent_reward, _, fp = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
         # if agent does not crash originally, nothing to do in this mode
         if self.mode == "qualitative" and agent_reward > 0:
             return num_warning  # iow 0
 
         for deviation in self.deviations:
-            # self.game.env.reset(random_seed=random_seed)
             self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
-            dev_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, lahead_seq=deviation, mode=self.mode)
+            dev_reward, _, fp = self.game.run_pol_fuzz(fuzz_seed.data, lahead_seq=deviation, mode=self.mode)
+            # print(fp, dev_reward, agent_reward)
+            print(dev_reward, agent_reward)
 
             if dev_reward > agent_reward:
                 num_warning += 1
@@ -60,14 +60,13 @@ class MetamorphicOracle(Oracle):
         street = copy.deepcopy(fuzz_seed.state_env)
 
         car_positions = []
-        empty_positions = []
+        free_positions = []
         for lane_id, lane in enumerate(street):
             for spot_id, spot in enumerate(lane):
                 if (spot is not None) and (str(spot) != "A"):
                     car_positions.append((lane_id, spot_id))
                 if spot is None:
-                    empty_positions.append((lane_id, spot_id))
-
+                    free_positions.append((lane_id, spot_id))
 
         for idx in range(SEARCH_BUDGET):
             # make map EASIER
@@ -94,14 +93,11 @@ class MetamorphicOracle(Oracle):
                 if self.mode == "qualitative" and agent_reward > 0:
                     continue
 
-                mut_ind = np.random.choice(len(empty_positions), MM_MUT_MAGNITUDE, replace=False)
-                mut_positions = np.array(empty_positions)[mut_ind]
+                mut_ind = np.random.choice(len(free_positions), MM_MUT_MAGNITUDE, replace=False)
+                mut_positions = np.array(free_positions)[mut_ind]
 
                 for pos in mut_positions:
-                    if pos[0] == 0:  # maniac lane
-                        street[pos[0]][pos[1]] = "S"
-                    elif pos[0] == 1:  # grandma lane
-                        street[pos[0]][pos[1]] = "G"
+                    street[pos[0]][pos[1]] = self.game.env.get_new_car(pos[0])
 
                 self.game.env.set_state(street, v)
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
