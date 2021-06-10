@@ -1,20 +1,21 @@
 import copy
 import itertools
 import numpy as np
-from fuzz_config import MAX_DEVIATION_DEPTH, DEVIATION_SAMPLE_SIZE, MM_MUT_MAGNITUDE
+from fuzz_config import DEVIATION_DEPTH, SEARCH_BUDGET, MM_MUT_MAGNITUDE
 from abc import ABC, abstractmethod
 
 class Oracle(ABC):
 
-    def __init__(self, game):
+    def __init__(self, game, mode):
         super().__init__()
         self.game = game
+        self.mode = mode
 
     def set_deviations(self):
-        deviations = list(itertools.product(self.game.action_space, repeat=MAX_DEVIATION_DEPTH))
+        deviations = list(itertools.product(self.game.action_space, repeat=DEVIATION_DEPTH))
 
-        if len(deviations) > DEVIATION_SAMPLE_SIZE:
-            deviations = np.random.choice(deviations, DEVIATION_SAMPLE_SIZE, replace=False)
+        if len(deviations) > SEARCH_BUDGET:
+            deviations = np.random.choice(deviations, SEARCH_BUDGET, replace=False)
 
         self.deviations = deviations
 
@@ -24,60 +25,94 @@ class Oracle(ABC):
 
 
 class LookAheadOracle(Oracle):
-    def __init__(self, game):
-        super().__init__(game)
+    def __init__(self, game, mode):
+        super().__init__(game, mode)
 
     def explore(self, fuzz_seed, random_seed):
         super().set_deviations()
         num_warning = 0
-        devs = []
-        agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, lahead_seq=[])
+        agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
+
+        # if agent does not crash originally, nothing to do in this mode
+        if self.mode == "qualitative" and agent_reward > 0:
+            return num_warning  # iow 0
+
         for deviation in self.deviations:
             # self.game.env.reset(random_seed=random_seed)
             self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
-            dev_reward, dev_state, _ = self.game.run_pol_fuzz(fuzz_seed.data, lahead_seq=deviation)
+            dev_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, lahead_seq=deviation, mode=self.mode)
 
-            if dev_state is not None:
-                devs.append(dev_state)
             if dev_reward > agent_reward:
                 num_warning += 1
 
-        return num_warning, devs
+        return num_warning
 
 
 class MetamorphicOracle(Oracle):
-    def __init__(self, game):
-        super().__init__(game)
+    def __init__(self, game, mode):
+        super().__init__(game, mode)
 
     def explore(self, fuzz_seed, random_seed):
-
-        agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, lahead_seq=[])
+        num_warning = 0
+        agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
 
         v = fuzz_seed.data[-1]
         street = copy.deepcopy(fuzz_seed.state_env)
+
         car_positions = []
+        empty_positions = []
         for lane_id, lane in enumerate(street):
             for spot_id, spot in enumerate(lane):
                 if (spot is not None) and (str(spot) != "A"):
                     car_positions.append((lane_id, spot_id))
+                if spot is None:
+                    empty_positions.append((lane_id, spot_id))
 
-        num_warning = 0
-        for i in range(DEVIATION_SAMPLE_SIZE):
-            mut_ind = np.random.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
-            mut_positions = np.array(car_positions)[mut_ind]
 
-            for pos in mut_positions:
-                street[pos[0]][pos[1]] = None
+        for idx in range(SEARCH_BUDGET):
+            # make map EASIER
+            if idx % 2 == 0:
+                # if we make the map easier and the agent is crashing we cant claim any bug in this mode
+                if self.mode == "qualitative" and agent_reward < 0:
+                    continue
 
-            self.game.env.set_state(street, v)
-            state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
-            mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, lahead_seq=[])
-            if agent_reward > mut_reward:
-                num_warning += 1
+                mut_ind = np.random.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
+                mut_positions = np.array(car_positions)[mut_ind]
+
+                for pos in mut_positions:
+                    street[pos[0]][pos[1]] = None
+
+                self.game.env.set_state(street, v)
+                state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+                mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
+
+                if agent_reward > mut_reward:
+                    num_warning += 1
+            # make map HARDER
+            else:
+                # if we make the map harder and the agent is winning we cant claim any bug in this mode
+                if self.mode == "qualitative" and agent_reward > 0:
+                    continue
+
+                mut_ind = np.random.choice(len(empty_positions), MM_MUT_MAGNITUDE, replace=False)
+                mut_positions = np.array(empty_positions)[mut_ind]
+
+                for pos in mut_positions:
+                    if pos[0] == 0:  # maniac lane
+                        street[pos[0]][pos[1]] = "S"
+                    elif pos[0] == 1:  # grandma lane
+                        street[pos[0]][pos[1]] = "G"
+
+                self.game.env.set_state(street, v)
+                state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
+                mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
+
+                if agent_reward < mut_reward:
+                    num_warning += 1
 
             street = copy.deepcopy(fuzz_seed.state_env)
 
-        return num_warning, []
+        return num_warning
 
 class OptimalOracle(Oracle):
     def explore(self, seed, random_seed):

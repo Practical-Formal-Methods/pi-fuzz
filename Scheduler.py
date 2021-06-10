@@ -7,36 +7,47 @@ class Scheduler(ABC):
         super().__init__()
 
     @abstractmethod
-    def choose(self, population):
-        population = [seed for seed in population if seed.energy > 0]
-        return population
+    def choose(self, pool):
+        filter_pool = []
+        for seed in pool:
+            if seed.energy > 0:
+                filter_pool.append(seed)
+
+        # if all seed energy is 0 start over
+        if len(filter_pool) == 0:
+            for seed in pool:
+                seed.energy = 1
+            return pool
+
+        return filter_pool
 
 class QueueScheduler(Scheduler):
-    def choose(self, population):
-        population = super().choose(population)
-        if not population:
+    def choose(self, pool):
+        pool = super().choose(pool)
+
+        if not pool:
             return None
-        else:
-            seed = population[0]  # set its energy to 0 so that never use it again
-            seed.energy = 0
-            return seed
+
+        seed = pool[0]  # set its energy to 0 so that never use it again
+        seed.energy = 0
+        return seed
 
 
 class RandomScheduler(Scheduler):
-    def choose(self, population):
-        population = super().choose(population)
-        if not population:
+    def choose(self, pool):
+        pool = super().choose(pool)
+        if not pool:
             return None
         else:
-            seed = np.random.choice(population)
+            seed = np.random.choice(pool)
             seed.energy = 0
             return seed
 
 
 class PowerScheduler(Scheduler):
-    def normalized_weight(self, population):
+    def normalized_weight(self, pool):
         """Normalize weight"""
-        weights = list(map(lambda seed: seed.weight, population))
+        weights = list(map(lambda seed: seed.weight, pool))
         sum_weights = sum(weights)  # Add up all values in weight
         if sum_weights == 0:
             norm_weight = [1/len(weights) for _ in weights]
@@ -44,14 +55,14 @@ class PowerScheduler(Scheduler):
             norm_weight = list(map(lambda nrg: nrg / sum_weights, weights))
         return norm_weight
 
-    def filter_population(self, population):
-        """Filter out seeds whose energy became zero from the population"""
-        population = [seed for seed in population if seed.energy > 0]
-        return population
+    def filter_pool(self, pool):
+        """Filter out seeds whose energy became zero from the pool"""
+        pool = [seed for seed in pool if seed.energy > 0]
+        return pool
 
-    def choose(self, population):
+    def choose(self, pool):
         """Choose weighted by normalized weight."""
-        population = self.filter_population(population)
-        norm_weight = self.normalized_weight(population)
-        seed = np.random.choice(population, p=norm_weight)
+        pool = self.filter_pool(pool)
+        norm_weight = self.normalized_weight(pool)
+        seed = np.random.choice(pool, p=norm_weight)
         return seed

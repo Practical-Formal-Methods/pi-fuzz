@@ -6,28 +6,22 @@ from fuzz_config import *
 
 
 class Fuzzer:
-    def __init__(self, fuzz_game, fuzz_type, schedule, oracle):
+    def __init__(self, fuzz_game, schedule, oracle, mutator):
 
-        self.fuzz_type = fuzz_type
         self.schedule = schedule
-
-        self.pool = []
-        self.explored_seeds = []
-        self.epochs = 0
-
+        self.mutator = mutator
         self.game = fuzz_game
         self.oracle = oracle
 
-        self.coverage = []  # list of tuples of length 2048
-        self.wrng_prefixes = []
-        self.snapshopts = []
-        self.deviations = []
-
+        self.pool = []
+        self.epochs = 0
         self.warning_cnt = 0
-        self.random_expl_divider = 1  # randomness decreases when increased
 
     # @profile
     def fuzz(self):
+
+        self.populate_pool()
+
         fuzz_start = time.time()
         cur_time = fuzz_start
 
@@ -43,22 +37,30 @@ class Fuzzer:
 
             self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
 
-            num_warning, devs = self.oracle.explore(fuzz_seed, random_seed)
-            self.cov_populate(devs)
+            num_warning = self.oracle.explore(fuzz_seed, random_seed)
 
             random_seed += 1
             cur_time = time.time()
 
             print(cur_time - fuzz_start, num_warning)
 
-    def cov_populate(self, cands):
-        for (cand_nn, cand_env) in cands:
+
+    def populate_pool(self):
+        for _ in range(20):
+            self.game.env.reset()
+            state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+            seed = Seed(state_nn, state_env)
+            self.pool.append(seed)
+
+        for cnt in range(MUTATION_BUDGET):
+            seed = self.schedule.choose(self.pool)
+
+            cand_nn, cand_env = self.mutator.mutate(seed)
+            if cand_nn is None: continue
+
             d_shortest = np.inf
-            if not self.pool:
-                self.pool.append(Seed(cand_nn, cand_env))
-                continue
-            for seed in self.pool:
-                dist = np.linalg.norm(cand_nn - seed.data, ord=2)
+            for sd in self.pool:
+                dist = np.linalg.norm(cand_nn - sd.data, ord=2)
                 if dist < d_shortest:
                     d_shortest = dist
 
