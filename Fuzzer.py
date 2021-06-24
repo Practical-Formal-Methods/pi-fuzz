@@ -41,24 +41,30 @@ class Fuzzer:
         return warnings
 
     def populate_pool(self):
-        for _ in range(30):
-            self.game.env.reset(None)
-            state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
-            seed = Seed(state_nn, state_env)
-            self.pool.append(seed)
+        # for _ in range(30):
+        self.game.env.reset(None)
+        state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+        seed = Seed(state_nn, state_env)
+        self.pool.append(seed)
 
         for cnt in range(POOL_BUDGET):
-            seed = self.schedule.choose(self.pool)
-            cand_env, cand_nn = self.mutator.mutate(seed)
-            if cand_nn is None: continue
 
-            d_shortest = np.inf
-            for ex_sd in self.pool:
-                dist = np.linalg.norm(cand_nn - ex_sd.data, ord=2)
-                if dist < d_shortest:
-                    d_shortest = dist
+            if np.random.rand() < 0.7:
+                seed = self.schedule.choose(self.pool)
+                cand_env, cand_nn = self.mutator.mutate(seed)
+                if cand_nn is None: continue
 
-            if d_shortest > COV_DIST_THOLD:
-                self.pool.append(Seed(cand_nn, cand_env))
+                d_shortest = np.inf
+                for ex_sd in self.pool:
+                    dist = np.linalg.norm(cand_nn - ex_sd.data, ord=2)
+                    if dist < d_shortest:
+                        d_shortest = dist
 
+                if d_shortest > COV_DIST_THOLD:
+                    self.pool.append(Seed(cand_nn, cand_env))
+            else:
+                self.game.env.reset(None)
+                state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+                seed = Seed(state_nn, state_env)
+                self.pool.append(seed)
         return self.pool

@@ -51,7 +51,7 @@ class Wrapper():
             if done:
                 total_reward = self.env.get_discounted_return()
                 if mode == "qualitative":
-                    total_reward = int(total_reward > 0)
+                    total_reward = int(total_reward > 0) * 100  # if no crash 100 else 0
                 return total_reward, dev_state, full_play
 
             idx += 1

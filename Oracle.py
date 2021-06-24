@@ -1,7 +1,7 @@
 import copy
 import itertools
 import numpy as np
-from fuzz_config import DEVIATION_DEPTH, SEARCH_BUDGET, MM_MUT_MAGNITUDE
+from fuzz_config import DEVIATION_DEPTH, SEARCH_BUDGET, MM_MUT_MAGNITUDE, DELTA
 from abc import ABC, abstractmethod
 
 class Oracle(ABC):
@@ -39,10 +39,8 @@ class LookAheadOracle(Oracle):
         for deviation in self.deviations:
             self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
             dev_reward, _, fp = self.game.run_pol_fuzz(fuzz_seed.data, lahead_seq=deviation, mode=self.mode)
-            # print(fp, dev_reward, agent_reward)
-            print(dev_reward, agent_reward)
 
-            if dev_reward > agent_reward:
+            if dev_reward - agent_reward > DELTA:
                 num_warning += 1
 
         return num_warning
@@ -78,6 +76,7 @@ class MetamorphicOracle(Oracle):
                 mut_ind = np.random.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
                 mut_positions = np.array(car_positions)[mut_ind]
 
+                # remove cars
                 for pos in mut_positions:
                     street[pos[0]][pos[1]] = None
 
@@ -85,7 +84,7 @@ class MetamorphicOracle(Oracle):
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
                 mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 
-                if agent_reward > mut_reward:
+                if agent_reward - mut_reward > DELTA:
                     num_warning += 1
             # make map HARDER
             else:
@@ -103,7 +102,7 @@ class MetamorphicOracle(Oracle):
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
                 mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 
-                if agent_reward < mut_reward:
+                if agent_reward - mut_reward > DELTA:
                     num_warning += 1
 
             street = copy.deepcopy(fuzz_seed.state_env)

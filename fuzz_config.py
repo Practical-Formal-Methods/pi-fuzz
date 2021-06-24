@@ -6,3 +6,4 @@ LA_MUT_MAGNITUDE = 3
 POOL_POP_MUT = 3
 POOL_BUDGET = 100
 DEVIATION_DEPTH = 3
+DELTA = 2.5  # quantitative oracle ensures there is a flaw

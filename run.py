@@ -32,18 +32,11 @@ def fuzz_func(agent_path):
 
         ind_warn = 0
         for wrn in warnings:
-            if wrn > 0:
-                ind_warn += 1
-        num_ind_warns.append(ind_warn)
-        num_tot_warns.append(sum(warnings))
-        print(ind_warn, sum(warnings))
+            if wrn > 0: ind_warn += 1
+        num_ind_warns.append(ind_warn/len(warnings))
+        num_tot_warns.append(sum(warnings)/len(warnings))
+        print(ind_warn, sum(warnings), len(warnings))
 
     print(num_ind_warns)
     print(num_tot_warns)
-    # bad, meta, quantitative over 69 seeds
-    # [44, 32, 34, 37, 35, 34, 36, 37]
-    # [758, 538, 641, 683, 721, 736, 600, 721]
-    #good, meta, quantitative over 66 seeds
-    # [7, 8, 8, 15, 11, 8, 3, 7]
-    # [37, 76, 27, 215, 131, 85, 42, 35]
 num_wrng = fuzz_func("policies/modagent.pth")
