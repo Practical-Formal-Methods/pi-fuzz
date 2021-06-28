@@ -88,8 +88,8 @@ logger.info("### POLICY TESTING REPORT ###")
 logger.info("#############################")
 
 logger.info("\nRandom Seed: %d", RANDOM_SEED)
-logger.info("Bug Type: %d", bug_type)
-logger.info("Coverage Type: %d", coverage)
+logger.info("Bug Type: %s", bug_type)
+logger.info("Coverage Type: %s", coverage)
 
 ppaths = []
 for f in listdir("policies"):
