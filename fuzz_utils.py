@@ -1,13 +1,40 @@
 import re
 import time
-import random
-import itertools
+import logging
 import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
-from scipy.stats import entropy
 from sklearn.neighbors import NearestNeighbors
-from fuzz_config import COV_DIST_THOLD, MUTATE_MU, MUTATE_SIGMA, LOOKAHEAD_DEPTH
+from fuzz_config import COV_DIST_THOLD, POOL_BUDGET, random_seed
+
+# def plot_rq1():
+
+def plot_rq3(data):
+    data_mean = np.array(data).mean(axis=0)
+    data_sigma = np.array(data).std(axis=0)
+
+    plt.plot(range(POOL_BUDGET), data_mean, lw=2, label='mean population 1', color='blue')
+    plt.fill_between(range(POOL_BUDGET), data_mean+data_sigma, data_mean-data_sigma, facecolor='blue', alpha=0.5)
+    plt.savefig("results/rq3_seed" + str(random_seed) + "_pbdgt" + str(POOL_BUDGET) + ".pdf")
+
+def post_fuzz_analysis(warnings):
+    var = np.var(warnings)
+    ind_warn = 0
+    for wrn in warnings:
+        if wrn > 0: ind_warn += 1
+    ind_warn_norm = ind_warn / len(warnings)
+    tot_warn_norm = sum(warnings)
+
+    return ind_warn_norm, tot_warn_norm, var
+
+def setup_logger(name, log_file, level=logging.DEBUG):
+    handler = logging.FileHandler(log_file, mode="w")
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
+
 
 def post_fuzz_reward_analysis(ex_fname, new_fname, game_obj):
 
@@ -64,19 +91,20 @@ def post_fuzz_state_analysis(ex_fname, new_fname):
     with open(new_fname, 'w') as f:
         for line in lines_to_keep:  f.write(line + '\n')
 
-def check_safe_state(game, path, action_space=[0,1,2,3,4]):
-    lookahead_rewards = []
-
-    dev_paths = []
-    # for repeat in range(LOOKAHEAD_DEPTH):
-    dev_paths = list(itertools.product(action_space, repeat=LOOKAHEAD_DEPTH))
-
-    for dp in dev_paths:
-        res = game.run_pol_fuzz(prefix=path+list(dp), safe_check=True)
-        _, rew, _, _ = res["data"]
-        lookahead_rewards.append(rew)
-
-    return lookahead_rewards
+# LEGACY
+# def check_safe_state(game, path, action_space=[0,1,2,3,4]):
+#     lookahead_rewards = []
+#
+#     dev_paths = []
+#     # for repeat in range(LOOKAHEAD_DEPTH):
+#     dev_paths = list(itertools.product(action_space, repeat=LOOKAHEAD_DEPTH))
+#
+#     for dp in dev_paths:
+#         res = game.run_pol_fuzz(prefix=path+list(dp), safe_check=True)
+#         _, rew, _, _ = res["data"]
+#         lookahead_rewards.append(rew)
+#
+#     return lookahead_rewards
 
 def state_abstraction(cand_states):
     l2_distance_thold = 2
@@ -169,19 +197,20 @@ def plot_entropy(entropies):
     plt.show()
 
 
-def mutate_seed_selection(scheduler, pool, org_pol_len, explored_seeds):
-    seed = scheduler.choose(pool)
-    new_seed_data = seed.data
-    trial = 0
-    while new_seed_data in explored_seeds:
-        new_seed_data += random.normalvariate(MUTATE_MU, MUTATE_SIGMA)
-        if new_seed_data < 0: new_seed_data = -new_seed_data
-        if new_seed_data > (org_pol_len - 1): new_seed_data = org_pol_len - 1
-        new_seed_data = int(new_seed_data)
-        trial += 1
-        if trial >= 10: random_seed_selection(org_pol_len, explored_seeds)
-
-    return seed, new_seed_data
+# LEGACY
+# def mutate_seed_selection(scheduler, pool, org_pol_len, explored_seeds):
+#     seed = scheduler.choose(pool)
+#     new_seed_data = seed.data
+#     trial = 0
+#     while new_seed_data in explored_seeds:
+#         new_seed_data += random.normalvariate(MUTATE_MU, MUTATE_SIGMA)
+#         if new_seed_data < 0: new_seed_data = -new_seed_data
+#         if new_seed_data > (org_pol_len - 1): new_seed_data = org_pol_len - 1
+#         new_seed_data = int(new_seed_data)
+#         trial += 1
+#         if trial >= 10: random_seed_selection(org_pol_len, explored_seeds)
+#
+#     return seed, new_seed_data
 
 
 def entropy_seed_selection(org_pol_len, entropies, explored_seeds):

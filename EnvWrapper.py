@@ -1,5 +1,6 @@
 from linetrack.dqn.agent import Pseudo_Agent, Agent
 from linetrack.model.model import Linetrack
+from fuzz_config import RNG
 
 class Wrapper():
     def __init__(self, load_path):
@@ -18,12 +19,12 @@ class Wrapper():
         print('Model created.')
 
 
-    def create_linetrack_environment(self):
+    def create_linetrack_environment(self, random_seed=None):
         # environment parameters
         num_lines = 2
         length_lines = 100
         ratios = [0.02, 0.1]
-        env = Linetrack(num_lines=num_lines, length_lines=length_lines, mode='line_ratio', ratios=ratios, input_stripe=True, random_seed=123123123)
+        env = Linetrack(num_lines=num_lines, length_lines=length_lines, rng=RNG, mode='line_ratio', ratios=ratios, input_stripe=True)
         self.env = env
         print('Environment created.')
 

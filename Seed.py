@@ -9,4 +9,6 @@ class Seed(object):
         self.energy = 1
         self.weight = 0
         self.parent_seed = None
-        self.warning_prefixes = []
+        self.num_warn_la = 0
+        self.num_warn_mm_hard = 0
+        self.num_warn_mm_easy = 0
