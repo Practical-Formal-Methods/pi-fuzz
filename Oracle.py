@@ -108,7 +108,7 @@ class MetamorphicOracle(Oracle):
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
                 mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 
-                if agent_reward - mut_reward > DELTA:
+                if mut_reward - agent_reward > DELTA:
                     num_warning_hard += 1
 
             street = copy.deepcopy(fuzz_seed.state_env)
