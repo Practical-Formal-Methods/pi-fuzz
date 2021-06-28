@@ -5,7 +5,7 @@ import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
-from fuzz_config import COV_DIST_THOLD, POOL_BUDGET, random_seed
+from fuzz_config import COV_DIST_THOLD, POOL_BUDGET, RANDOM_SEED
 
 # def plot_rq1():
 
@@ -15,7 +15,7 @@ def plot_rq3(data):
 
     plt.plot(range(POOL_BUDGET), data_mean, lw=2, label='mean population 1', color='blue')
     plt.fill_between(range(POOL_BUDGET), data_mean+data_sigma, data_mean-data_sigma, facecolor='blue', alpha=0.5)
-    plt.savefig("results/rq3_seed" + str(random_seed) + "_pbdgt" + str(POOL_BUDGET) + ".pdf")
+    plt.savefig("results/rq3_seed" + str(RANDOM_SEED) + "_pbdgt" + str(POOL_BUDGET) + ".pdf")
 
 def post_fuzz_analysis(warnings):
     var = np.var(warnings)
