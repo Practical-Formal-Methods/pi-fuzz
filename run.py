@@ -10,7 +10,7 @@ import Mutator
 from fuzz_utils import post_fuzz_analysis, plot_rq3, setup_logger
 from fuzz_config import RANDOM_SEED
 
-def fuzz_func(agent_path, bug_type):
+def fuzz_func(agent_path, bug_type, coverage):
 
     game = EW.Wrapper(agent_path)
     game.create_linetrack_environment()
@@ -39,7 +39,7 @@ def fuzz_func(agent_path, bug_type):
         logger.info("====================")
         fuzz_st = time.time()
 
-        fuzzer = Fuzzer.Fuzzer(fuzz_game=game, schedule=schedule, la_oracle=la_oracle, mm_oracle=mm_oracle, mutator=mutator)
+        fuzzer = Fuzzer.Fuzzer(fuzz_game=game, schedule=schedule, la_oracle=la_oracle, mm_oracle=mm_oracle, mutator=mutator, coverage=coverage)
         warnings_la, warnings_mm, pop_summ = fuzzer.fuzz()
         population_summaries.append(pop_summ)
 
@@ -77,6 +77,7 @@ def fuzz_func(agent_path, bug_type):
 
 # SET SEED IN FUZZ_CONFIG
 # oracle_type = "metamorphic"
+coverage = "raw"
 bug_type = "qualitative"
 loggername = "fuzz_logger"
 logfilename = "policy_testing_%s.log" % time.strftime("%Y%m%d_%H%M%S")
@@ -88,6 +89,7 @@ logger.info("#############################")
 
 logger.info("\nRandom Seed: %d", RANDOM_SEED)
 logger.info("Bug Type: %d", bug_type)
+logger.info("Coverage Type: %d", coverage)
 
 ppaths = []
 for f in listdir("policies"):
@@ -103,9 +105,9 @@ for idx, pp in enumerate(ppaths):
     logger.info("==================================")
     logger.info("==================================")
 
-    tot_la, ind_la, var_la, tot_mm, ind_mm, var_mm = fuzz_func(pp, bug_type)
+    tot_la, ind_la, var_la, tot_mm, ind_mm, var_mm = fuzz_func(pp, bug_type, coverage)
 
     with open("outs.csv", mode="a") as fw:
-        row = "%s, %s, %d, %s, %s, %s, %s, %s, %s\n" % (bug_type, pname, RANDOM_SEED, tot_la, ind_la, var_la, tot_mm, ind_mm, var_mm)
+        row = "%s, %s, %s, %d, %s, %s, %s, %s, %s, %s\n" % (bug_type, coverage, pname, RANDOM_SEED, tot_la, ind_la, var_la, tot_mm, ind_mm, var_mm)
         fw.write(row)
 

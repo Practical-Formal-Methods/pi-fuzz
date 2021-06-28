@@ -6,13 +6,14 @@ from fuzz_config import *
 logger = logging.getLogger('fuzz_logger')
 
 class Fuzzer:
-    def __init__(self, fuzz_game, schedule, la_oracle, mm_oracle, mutator):
+    def __init__(self, fuzz_game, schedule, la_oracle, mm_oracle, mutator, coverage):
 
         self.schedule = schedule
         self.mutator = mutator
         self.game = fuzz_game
         self.la_oracle = la_oracle
         self.mm_oracle = mm_oracle
+        self.cov_type = coverage
 
         self.pool = []
         self.epochs = 0
@@ -71,8 +72,8 @@ class Fuzzer:
 
         return population_summary
 
-    def is_interesting(self, cand, type="raw"):
-        if type == "abs":
+    def is_interesting(self, cand):
+        if self.cov_type == "abs":
             cand = torch.tensor(cand).float()
             cand = self.game.model.qnetwork_target.hidden(cand)
             cand = cand.detach().numpy()
@@ -80,7 +81,7 @@ class Fuzzer:
         d_shortest = np.inf
         for ex_sd in self.pool:
             ex_sd_data = ex_sd.data
-            if type == "abs":
+            if self.cov_type == "abs":
                 ex_sd_data = torch.tensor(ex_sd_data).float()
                 ex_sd_data = self.game.model.qnetwork_target.hidden(ex_sd_data)
                 ex_sd_data = ex_sd_data.detach().numpy()
