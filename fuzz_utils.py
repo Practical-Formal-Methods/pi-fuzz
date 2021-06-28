@@ -22,7 +22,7 @@ def post_fuzz_analysis(warnings):
     ind_warn = 0
     for wrn in warnings:
         if wrn > 0: ind_warn += 1
-    ind_warn_norm = ind_warn / len(warnings)
+    ind_warn_norm = 100*ind_warn / len(warnings)
     tot_warn_norm = sum(warnings)
 
     return ind_warn_norm, tot_warn_norm, var
