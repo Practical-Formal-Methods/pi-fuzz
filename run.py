@@ -7,10 +7,10 @@ import Scheduler
 import EnvWrapper as EW
 import Fuzzer
 import Mutator
-from fuzz_utils import post_fuzz_analysis, plot_rq3, setup_logger
+from fuzz_utils import post_fuzz_analysis, plot_rq3_time, setup_logger
 from fuzz_config import RANDOM_SEED
 
-def fuzz_func(agent_path, bug_type, coverage):
+def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
 
     game = EW.Wrapper(agent_path)
     game.create_linetrack_environment()
@@ -22,14 +22,15 @@ def fuzz_func(agent_path, bug_type, coverage):
     # schedule = Scheduler.RandomScheduler()  # using random scheduler can be problematic. check pool population code
     schedule = Scheduler.QueueScheduler()
     logger.info("Random Action Mutator and Queue Scheduler are used.")
-    la_oracle = Oracle.LookAheadOracle(game, mode=bug_type)
+    # la_oracle = Oracle.LookAheadOracle(game, mode=bug_type)
     mm_oracle = Oracle.MetamorphicOracle(game, mode=bug_type)
 
+    resulting_pools = []
     population_summaries = []
-    all_variances_la = []
+    # all_variances_la = []
     all_variances_mm = []
-    all_tot_warns_la = []
-    all_ind_warns_la = []
+    # all_tot_warns_la = []
+    # all_ind_warns_la = []
     all_tot_warns_mm = []
     all_ind_warns_mm = []
     fuzz_runs = 8
@@ -39,21 +40,20 @@ def fuzz_func(agent_path, bug_type, coverage):
         logger.info("====================")
         fuzz_st = time.time()
 
-        fuzzer = Fuzzer.Fuzzer(fuzz_game=game, schedule=schedule, la_oracle=la_oracle, mm_oracle=mm_oracle, mutator=mutator, coverage=coverage)
-        warnings_la, warnings_mm, pop_summ = fuzzer.fuzz()
+        fuzzer = Fuzzer.Fuzzer(fuzz_type=fuzz_type, fuzz_game=game, schedule=schedule, la_oracle=None, mm_oracle=mm_oracle, mutator=mutator, coverage=coverage)
+        warnings_mm, pop_summ = fuzzer.fuzz()
         population_summaries.append(pop_summ)
-
-        ind_warns_la, tot_warns_la, var_la = post_fuzz_analysis(warnings_la)
+        resulting_pools.append(fuzzer.pool)
         ind_warns_mm, tot_warns_mm, var_mm = post_fuzz_analysis(warnings_mm)
 
-        logger.info("\nLookahead Oracle has found total of %d warnings on %.2f%% percent of states (%d). Variance is: %.2f" % (tot_warns_la, ind_warns_la, len(fuzzer.pool), var_la))
-        logger.info("Metamoprhic Oracle has found total of %d warnings on %.2f%% percent of states (%d). Variance is: %.2f" % (tot_warns_mm, ind_warns_mm, len(fuzzer.pool), var_mm))
+        # logger.info("\nLookahead Oracle has found total of %d warnings on %.2f%% percent of states (%d). Variance is: %.2f" % (tot_warns_la, ind_warns_la, len(fuzzer.pool), var_la))
+        logger.info("\nMetamorphic Oracle has found total of %d warnings on %.2f%% percent of states (%d). Variance is: %.2f" % (tot_warns_mm, ind_warns_mm, len(fuzzer.pool), var_mm))
 
-        all_variances_la.append(var_la)
+        # all_variances_la.append(var_la)
+        # all_ind_warns_la.append(ind_warns_la)
+        # all_tot_warns_la.append(tot_warns_la)
         all_variances_mm.append(var_mm)
-        all_ind_warns_la.append(ind_warns_la)
         all_ind_warns_mm.append(ind_warns_mm)
-        all_tot_warns_la.append(tot_warns_la)
         all_tot_warns_mm.append(tot_warns_mm)
 
         fuzz_et = time.time()
@@ -62,21 +62,22 @@ def fuzz_func(agent_path, bug_type, coverage):
         logger.info("Fuzz %d Ends Here. It took %d seconds." % (r_id, int(fuzz_et-fuzz_st)))
         logger.info("======================================")
 
-    logger.info("Lookahead Oracle summary in %d fuzz runs:" % fuzz_runs)
-    logger.info("    Total number of warnings: %s" % str(all_tot_warns_la))
-    logger.info("    Variance in number of warnings found in states: %s" % str(all_variances_la))
-    logger.info("    Percentage of states with at least one warning: %s" % str(all_ind_warns_la))
+    # logger.info("Lookahead Oracle summary in %d fuzz runs:" % fuzz_runs)
+    # logger.info("    Total number of warnings: %s" % str(all_tot_warns_la))
+    # logger.info("    Variance in number of warnings found in states: %s" % str(all_variances_la))
+    # logger.info("    Percentage of states with at least one warning: %s" % str(all_ind_warns_la))
     logger.info("Metamorphic Oracle summary in %d fuzz runs:" % fuzz_runs)
     logger.info("    Total number of warnings: %s" % str(all_tot_warns_mm))
     logger.info("    Variance in number of warnings found in states: %s" % str(all_variances_mm))
     logger.info("    Percentage of states with at least one warning: %s" % str(all_ind_warns_mm))
 
-    plot_rq3(population_summaries)
+    plot_rq3_time(population_summaries, resulting_pools)
 
-    return all_tot_warns_la, all_ind_warns_la, all_variances_la, all_tot_warns_mm, all_ind_warns_mm, all_variances_mm
+    return all_tot_warns_mm, all_ind_warns_mm, all_variances_mm  # all_tot_warns_la, all_ind_warns_la, all_variances_la,
 
 # SET SEED IN FUZZ_CONFIG
-# oracle_type = "metamorphic"
+oracle_type = "metamorphic"
+fuzz_type = "gbox"
 coverage = "raw"
 bug_type = "qualitative"
 loggername = "fuzz_logger"
@@ -88,12 +89,14 @@ logger.info("### POLICY TESTING REPORT ###")
 logger.info("#############################")
 
 logger.info("\nRandom Seed: %d", RANDOM_SEED)
+logger.info("Fuzzer type: %s", fuzz_type)
 logger.info("Bug Type: %s", bug_type)
 logger.info("Coverage Type: %s", coverage)
+logger.info("Oracle Type: %s", oracle_type)
 
 ppaths = []
 for f in listdir("policies"):
-    if isfile(join("policies", f)):
+    if isfile(join("policies", f)) and "agent8" in f:
         ppaths.append(join("policies", f))
 
 
@@ -105,9 +108,9 @@ for idx, pp in enumerate(ppaths):
     logger.info("==================================")
     logger.info("==================================")
 
-    tot_la, ind_la, var_la, tot_mm, ind_mm, var_mm = fuzz_func(pp, bug_type, coverage)
+    tot_mm, ind_mm, var_mm = fuzz_func(fuzz_type, pp, bug_type, coverage)
 
-    with open("outs.csv", mode="a") as fw:
-        row = "%s, %s, %s, %d, %s, %s, %s, %s, %s, %s\n" % (bug_type, coverage, pname, RANDOM_SEED, tot_la, ind_la, var_la, tot_mm, ind_mm, var_mm)
+    with open("results/outs.csv", mode="a") as fw:
+        row = "%s; %s; %s; %d; %s; %s; %s\n" % (bug_type, coverage, pname, RANDOM_SEED, tot_mm, ind_mm, var_mm)
         fw.write(row)
 

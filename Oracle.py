@@ -94,6 +94,9 @@ class MetamorphicOracle(Oracle):
                     num_warning_easy += 1
             # make map HARDER
             else:
+                # in hard configuration there can be only one buggy state
+                if num_warning_hard:
+                    continue
                 # if we make the map harder and the agent is winning we cant claim any bug in this mode
                 if self.mode == "qualitative" and agent_reward > 0:
                     continue
@@ -109,7 +112,7 @@ class MetamorphicOracle(Oracle):
                 mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 
                 if mut_reward - agent_reward > DELTA:
-                    num_warning_hard += 1
+                    num_warning_hard = 1
 
             street = copy.deepcopy(fuzz_seed.state_env)
 

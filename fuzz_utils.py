@@ -7,13 +7,29 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from fuzz_config import COV_DIST_THOLD, POOL_BUDGET, RANDOM_SEED
 
-# def plot_rq1():
+def plot_rq3_time(pool_pop_summ, pool):
+    for idx, pp in enumerate(pool_pop_summ):
+        plt.plot(pp[0], pp[1], lw=2, label=idx+1)
+    plt.savefig("results/rq3_poolovertime_seed" + str(RANDOM_SEED) + "_timebdgt" + str(POOL_BUDGET) + ".pdf")
 
-def plot_rq3(data):
-    data_mean = np.array(data).mean(axis=0)
-    data_sigma = np.array(data).std(axis=0)
+    warn_seed_times = []
+    for seed in pool:
+        if seed.num_warn_mm_hard or seed.num_warn_mm_easy:
+            warn_seed_times.append(seed.fuzz_time)
 
-    plt.plot(range(POOL_BUDGET), data_mean, lw=2, label='mean population 1', color='blue')
+    warn_over_time = []
+    for sec in range(POOL_BUDGET):
+        warn_over_time.append(sum(wst < sec for wst in warn_seed_times))
+
+    plt.plot(range(POOL_BUDGET), warn_over_time, lw=2)
+    plt.savefig("results/rq3_warnovertime_seed" + str(RANDOM_SEED) + "_timebdgt" + str(POOL_BUDGET) + ".pdf")
+
+
+def plot_rq3_trial(pool_pop_summ, pool):
+    data_mean = np.array(pool_pop_summ).mean(axis=0)
+    data_sigma = np.array(pool_pop_summ).std(axis=0)
+
+    plt.plot(range(POOL_BUDGET), data_mean, lw=2, label='mean', color='blue')
     plt.fill_between(range(POOL_BUDGET), data_mean+data_sigma, data_mean-data_sigma, facecolor='blue', alpha=0.5)
     plt.savefig("results/rq3_seed" + str(RANDOM_SEED) + "_pbdgt" + str(POOL_BUDGET) + ".pdf")
 

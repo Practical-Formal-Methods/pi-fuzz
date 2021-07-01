@@ -1,3 +1,4 @@
+import time
 import torch
 import logging
 from Seed import Seed
@@ -6,8 +7,9 @@ from fuzz_config import *
 logger = logging.getLogger('fuzz_logger')
 
 class Fuzzer:
-    def __init__(self, fuzz_game, schedule, la_oracle, mm_oracle, mutator, coverage):
+    def __init__(self, fuzz_type, fuzz_game, schedule, la_oracle, mm_oracle, mutator, coverage):
 
+        self.fuzz_type = fuzz_type
         self.schedule = schedule
         self.mutator = mutator
         self.game = fuzz_game
@@ -21,10 +23,13 @@ class Fuzzer:
 
     # @profile
     def fuzz(self):
+        # time start
         population_summary = self.populate_pool()
+        # time end
+
         logger.info("Pool Budget: %d, Size of the Pool: %d" % (POOL_BUDGET, len(self.pool)))
 
-        warnings_la = []
+        # warnings_la = []
         warnings_mm = []
         # fuzz_seed = self.schedule.choose(self.pool)
         for idx, fuzz_seed in enumerate(self.pool): #cur_time - fuzz_start < TIME_BOUND:
@@ -32,43 +37,46 @@ class Fuzzer:
 
             self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
 
-            num_warn_la = self.la_oracle.explore(fuzz_seed)
+            # num_warn_la = self.la_oracle.explore(fuzz_seed)
             num_warn_mm_e, num_warn_mm_h = self.mm_oracle.explore(fuzz_seed)
             num_warn_mm_tot = num_warn_mm_e + num_warn_mm_h
 
-            fuzz_seed.num_warn_la = num_warn_la
+            # fuzz_seed.num_warn_la = num_warn_la
             fuzz_seed.num_warn_mm_hard = num_warn_mm_h
             fuzz_seed.num_warn_mm_easy = num_warn_mm_e
 
-            warnings_la.append(num_warn_la)
+            # warnings_la.append(num_warn_la)
             warnings_mm.append(num_warn_mm_tot)
 
-            logger.info("\nLookahead Oracle has found %d warnings in state %d" % (num_warn_la, idx))
+            # logger.info("\nLookahead Oracle has found %d warnings in state %d" % (num_warn_la, idx))
             logger.info("Metamorphic Oracle has found %d(E) + %d(H) = %d warnings in state %d" % (num_warn_mm_e, num_warn_mm_h, num_warn_mm_tot, idx))
 
-        return warnings_la, warnings_mm, population_summary
+        return warnings_mm, population_summary  # warnings_la,
 
     def populate_pool(self):
         population_summary = []
         self.game.env.reset()
         state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
-        seed = Seed(state_nn, state_env)
+        seed = Seed(state_nn, state_env, 0)
         self.pool.append(seed)
 
-        for cnt in range(POOL_BUDGET):
+        start_time = time.time()
+        while (time.time() - start_time) < POOL_BUDGET:
 
             rnd = RNG.random()
-            if rnd < 0.7:
+            if not self.fuzz_type == "bbox" and rnd < 0.7:  # for BB if False
                 seed = self.schedule.choose(self.pool)
                 cand_env, cand_nn = self.mutator.mutate(seed)
             else:
                 self.game.env.reset()
                 cand_nn, cand_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
 
+            # time start
             if cand_nn is not None and self.is_interesting(cand_nn):
-                self.pool.append(Seed(cand_nn, cand_env))
+                self.pool.append(Seed(cand_nn, cand_env, time.time()-start_time))
 
-            population_summary.append(len(self.pool))
+            population_summary.append((time.time()-start_time, len(self.pool)))
+            # time end
 
         return population_summary
 
