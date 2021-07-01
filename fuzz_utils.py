@@ -20,12 +20,15 @@ def plot_rq3_time(pool_pop_summ, pools):
                 warn_seed_times.append(seed.fuzz_time)
         all_warn_seed_times.append(warn_seed_times)
 
-    warn_over_time = []
+    all_warns_over_time = []
     for ws_times in all_warn_seed_times:
+        warn_over_time = []
         for sec in range(POOL_BUDGET):
             warn_over_time.append(sum(wst < sec for wst in ws_times))
+        all_warns_over_time.append(warn_over_time)
 
-    plt.plot(range(POOL_BUDGET), warn_over_time, lw=2)
+    for wot in all_warns_over_time:
+        plt.plot(range(POOL_BUDGET), wot, lw=2)
     plt.savefig("results/rq3_warnovertime_seed" + str(RANDOM_SEED) + "_timebdgt" + str(POOL_BUDGET) + ".pdf")
 
 
