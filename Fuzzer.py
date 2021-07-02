@@ -24,9 +24,6 @@ class Fuzzer:
 
     # @profile
     def fuzz(self):
-        print(FUZZ_RNG.random())
-        print(ORACLE_RNG.random())
-        exit()
         # time start
         population_summary = self.populate_pool()
         # time end
