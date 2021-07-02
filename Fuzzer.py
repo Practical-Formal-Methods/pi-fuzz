@@ -1,8 +1,9 @@
 import time
 import torch
 import logging
+import numpy as np
 from Seed import Seed
-from fuzz_config import *
+from fuzz_config import FUZZ_RNG, POOL_BUDGET, COV_DIST_THOLD, ORACLE_RNG
 
 logger = logging.getLogger('fuzz_logger')
 
@@ -23,6 +24,9 @@ class Fuzzer:
 
     # @profile
     def fuzz(self):
+        print(FUZZ_RNG.random())
+        print(ORACLE_RNG.random())
+        exit()
         # time start
         population_summary = self.populate_pool()
         # time end
@@ -60,10 +64,12 @@ class Fuzzer:
         seed = Seed(state_nn, state_env, 0)
         self.pool.append(seed)
 
-        start_time = time.time()
-        while (time.time() - start_time) < POOL_BUDGET:
+        start_time = time.perf_counter()
+        trial = 0
+        while (time.perf_counter() - start_time) < POOL_BUDGET:
+            trial += 1
+            rnd = FUZZ_RNG.random()
 
-            rnd = RNG.random()
             if not self.fuzz_type == "bbox" and rnd < 0.7:  # for BB if False
                 seed = self.schedule.choose(self.pool)
                 cand_env, cand_nn = self.mutator.mutate(seed)
@@ -73,9 +79,9 @@ class Fuzzer:
 
             # time start
             if cand_nn is not None and self.is_interesting(cand_nn):
-                self.pool.append(Seed(cand_nn, cand_env, time.time()-start_time))
+                self.pool.append(Seed(cand_nn, cand_env, trial, time.perf_counter()-start_time))
 
-            population_summary.append((time.time()-start_time, len(self.pool)))
+            population_summary.append((time.perf_counter()-start_time, trial, len(self.pool)))
             # time end
 
         return population_summary

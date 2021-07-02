@@ -9,7 +9,7 @@ from fuzz_config import COV_DIST_THOLD, POOL_BUDGET, RANDOM_SEED
 
 def plot_rq3_time(pool_pop_summ, pools):
     for idx, pp in enumerate(pool_pop_summ):
-        plt.plot(pp[0], pp[1], lw=2, label=idx+1)
+        plt.plot(pp[0], pp[2], lw=2, label=idx+1)
     plt.savefig("results/rq3_poolovertime_seed" + str(RANDOM_SEED) + "_timebdgt" + str(POOL_BUDGET) + ".pdf")
 
     all_warn_seed_times = []

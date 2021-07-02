@@ -2,7 +2,7 @@ import copy
 import logging
 import itertools
 import numpy as np
-from fuzz_config import DEVIATION_DEPTH, SEARCH_BUDGET, MM_MUT_MAGNITUDE, DELTA, RNG
+from fuzz_config import DEVIATION_DEPTH, SEARCH_BUDGET, MM_MUT_MAGNITUDE, DELTA, ORACLE_RNG
 from abc import ABC, abstractmethod
 
 logger = logging.getLogger("fuzz_logger")
@@ -19,7 +19,7 @@ class Oracle(ABC):
         deviations = list(itertools.product(self.game.action_space, repeat=DEVIATION_DEPTH))
 
         if len(deviations) > SEARCH_BUDGET:
-            deviations = RNG.choice(deviations, SEARCH_BUDGET, replace=False)
+            deviations = ORACLE_RNG.choice(deviations, SEARCH_BUDGET, replace=False)
 
         self.deviations = deviations
 
@@ -79,7 +79,7 @@ class MetamorphicOracle(Oracle):
                 if self.mode == "qualitative" and agent_reward < 0:
                     continue
 
-                mut_ind = RNG.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
+                mut_ind = ORACLE_RNG.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
                 mut_positions = np.array(car_positions)[mut_ind]
 
                 # remove cars
@@ -101,7 +101,7 @@ class MetamorphicOracle(Oracle):
                 if self.mode == "qualitative" and agent_reward > 0:
                     continue
 
-                mut_ind = RNG.choice(len(free_positions), MM_MUT_MAGNITUDE, replace=False)
+                mut_ind = ORACLE_RNG.choice(len(free_positions), MM_MUT_MAGNITUDE, replace=False)
                 mut_positions = np.array(free_positions)[mut_ind]
 
                 for pos in mut_positions:

@@ -2,7 +2,7 @@ import copy
 import numpy as np
 
 class Seed(object):
-    def __init__(self, state_nn, state_env, fuzz_time):
+    def __init__(self, state_nn, state_env, gen_time, gen_trial):
         self.data = state_nn
         self.state_env = copy.copy(state_env)
         self.reward = 0
@@ -12,4 +12,5 @@ class Seed(object):
         self.num_warn_la = 0
         self.num_warn_mm_hard = 0
         self.num_warn_mm_easy = 0
-        self.fuzz_time = fuzz_time
+        self.gen_time = gen_time
+        self.gen_trial = gen_trial
