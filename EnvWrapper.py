@@ -10,8 +10,8 @@ class Wrapper():
         self.initial_state = None
         self.model = None
 
-    def create_linetrack_model(self):
-        ag = Agent(self.env, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
+    def create_linetrack_model(self, rng):
+        ag = Agent(self.env, rng, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
                   eps_decay=0.999, learning_count=0)
         ag.load(self.load_path, None)  # second parameter is useless here
         self.model = ag
@@ -43,7 +43,6 @@ class Wrapper():
 
             if idx == len(lahead_seq):
                 dev_state = self.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)  # BEWARE: position of this line is important.
-
 
             _, next_state, done = self.env.step(act)
 

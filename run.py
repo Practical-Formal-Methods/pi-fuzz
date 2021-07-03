@@ -8,18 +8,13 @@ import Scheduler
 import EnvWrapper as EW
 import Fuzzer
 import Mutator
-from fuzz_utils import post_fuzz_analysis, plot_rq3_time, setup_logger
+from fuzz_utils import post_fuzz_analysis, plot_rq3_time, setup_logger, set_rngs
 from fuzz_config import RANDOM_SEEDS, N_FUZZ_RUNS
 
 
 def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
-    fuzz_rngs = []
-    orcl_rngs = []
-    env_rngs = []
-    for i in range(N_FUZZ_RUNS):
-        env_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
-        fuzz_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
-        orcl_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
+
+    agent_rngs, env_rngs, fuzz_rngs, orcl_rngs = set_rngs()
 
     resulting_pools = []
     population_summaries = []
@@ -33,11 +28,10 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
 
         game = EW.Wrapper(agent_path)
         game.create_linetrack_environment(rng=env_rngs[r_id])
-        game.create_linetrack_model()
+        game.create_linetrack_model(rng=agent_rngs[r_id])
 
         mutator = Mutator.RandomActionMutator(game)
         schedule = Scheduler.QueueScheduler()
-        logger.info("Random Action Mutator and Queue Scheduler are used.")
         # la_oracle = Oracle.LookAheadOracle(game, mode=bug_type)
         fuzzer = Fuzzer.Fuzzer(rng=fuzz_rngs[r_id], fuzz_type=fuzz_type, fuzz_game=game, schedule=schedule, mutator=mutator, coverage=coverage)
 
@@ -128,11 +122,10 @@ for f in listdir("policies"):
 
 for idx, pp in enumerate(ppaths):
     pname = pp.split("/")[-1].split(".")[0]
-    logger.info("\n\n==================================")
-    logger.info("==================================")
+    logger.info("\n\n**************************************")
     logger.info("Policy %s is being tested." % pname)
-    logger.info("==================================")
-    logger.info("==================================")
+    logger.info("**************************************")
+    logger.info("Random Action Mutator and Queue Scheduler will be used.")
 
     tot_mm, ind_mm, var_mm = fuzz_func(fuzz_type, pp, bug_type, coverage)
 

@@ -57,10 +57,13 @@ class MetamorphicOracle(Oracle):
         super().__init__(game, mode, rng)
 
     def explore(self, fuzz_seed):
+        self.game.env.reset(rng=self.rng)
+
         num_warning_easy = 0
         num_warning_hard = 0
         self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
         agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
+
         v = fuzz_seed.data[-1]
         street = copy.deepcopy(fuzz_seed.state_env)
 
@@ -72,6 +75,7 @@ class MetamorphicOracle(Oracle):
                     car_positions.append((lane_id, spot_id))
                 if spot is None:
                     free_positions.append((lane_id, spot_id))
+
 
         for idx in range(SEARCH_BUDGET):
             # make map EASIER
@@ -89,8 +93,7 @@ class MetamorphicOracle(Oracle):
 
                 self.game.env.set_state(street, v)
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
-                mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
-
+                mut_reward, _, fp = self.game.run_pol_fuzz(state_nn, mode=self.mode)
                 if agent_reward - mut_reward > DELTA:
                     num_warning_easy += 1
             # make map HARDER

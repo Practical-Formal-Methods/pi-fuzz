@@ -5,7 +5,7 @@ import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
-from fuzz_config import COV_DIST_THOLD, POOL_BUDGET
+from fuzz_config import COV_DIST_THOLD, POOL_BUDGET, N_FUZZ_RUNS, RANDOM_SEEDS
 
 def plot_rq3_time(pool_pop_summ, pools):
     for idx, pp in enumerate(pool_pop_summ):
@@ -38,7 +38,7 @@ def plot_rq3_trial(pool_pop_summ, pool):
 
     plt.plot(range(POOL_BUDGET), data_mean, lw=2, label='mean', color='blue')
     plt.fill_between(range(POOL_BUDGET), data_mean+data_sigma, data_mean-data_sigma, facecolor='blue', alpha=0.5)
-    plt.savefig("results/rq3_seed" + str(RANDOM_SEED) + "_pbdgt" + str(POOL_BUDGET) + ".pdf")
+    plt.savefig("results/rq3_pbdgt" + str(POOL_BUDGET) + ".pdf")
 
 def post_fuzz_analysis(warnings):
     var = np.var(warnings)
@@ -49,6 +49,19 @@ def post_fuzz_analysis(warnings):
     tot_warn_norm = sum(warnings)
 
     return ind_warn_norm, tot_warn_norm, var
+
+def set_rngs():
+    agent_rngs = []
+    fuzz_rngs = []
+    orcl_rngs = []
+    env_rngs = []
+    for i in range(N_FUZZ_RUNS):
+        agent_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
+        env_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
+        fuzz_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
+        orcl_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
+
+    return agent_rngs, env_rngs, fuzz_rngs, orcl_rngs
 
 def setup_logger(name, log_file, level=logging.DEBUG):
     handler = logging.FileHandler(log_file, mode="w")

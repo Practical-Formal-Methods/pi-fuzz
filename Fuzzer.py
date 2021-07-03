@@ -30,7 +30,7 @@ class Fuzzer:
         # time end
         logger.info("Pool Budget: %d, Size of the Pool: %d" % (POOL_BUDGET, len(self.pool)))
 
-        return population_summary  # warnings_la,
+        return population_summary
 
     def populate_pool(self):
         population_summary = []
@@ -49,7 +49,7 @@ class Fuzzer:
                 seed = self.schedule.choose(self.pool)
                 cand_env, cand_nn = self.mutator.mutate(seed, self.rng)
             else:
-                self.game.env.reset()
+                self.game.env.reset(rng=self.rng)
                 cand_nn, cand_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
 
             # time start
