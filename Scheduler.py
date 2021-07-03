@@ -34,6 +34,7 @@ class QueueScheduler(Scheduler):
 
 
 class RandomScheduler(Scheduler):
+    # using random scheduler can be problematic. check pool population code
     def choose(self, pool):
         pool = super().choose(pool)
         if not pool:
