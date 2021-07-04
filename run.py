@@ -120,6 +120,7 @@ for f in listdir("policies"):
         ppaths.append(join("policies", f))
 
 workbook = xlsxwriter.Workbook('out.xlsx')
+worksheet = workbook.add_worksheet()
 
 for idx, pp in enumerate(ppaths):
     pname = pp.split("/")[-1].split(".")[0]
@@ -130,11 +131,11 @@ for idx, pp in enumerate(ppaths):
 
     tot_mm, ind_mm, var_mm = fuzz_func(fuzz_type, pp, bug_type, coverage)
 
-    worksheet = workbook.add_worksheet()
-
     report = [bug_type, coverage, pname, RANDOM_SEEDS, tot_mm, ind_mm, var_mm]
     worksheet.write_row(idx, 0, report)
 
     # with open("results/outs.csv", mode="a") as fw:
     #     row = "%s; %s; %s; %s; %s; %s; %s\n" % (bug_type, coverage, pname, RANDOM_SEEDS, tot_mm, ind_mm, var_mm)
     #     fw.write(row)
+
+workbook.close()

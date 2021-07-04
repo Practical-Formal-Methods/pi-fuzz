@@ -10,11 +10,12 @@ logger = logging.getLogger("fuzz_logger")
 
 class Oracle(ABC):
 
-    def __init__(self, game, mode, rng):
+    def __init__(self, game, mode, rng, de_dup):
         super().__init__()
         self.game = game
         self.mode = mode
         self.rng = rng
+        self.de_dup = de_dup
 
     def set_deviations(self):
         deviations = list(itertools.product(self.game.action_space, repeat=DEVIATION_DEPTH))
@@ -30,8 +31,8 @@ class Oracle(ABC):
 
 
 class LookAheadOracle(Oracle):
-    def __init__(self, game, mode, rng):
-        super().__init__(game, mode, rng)
+    def __init__(self, game, mode, rng, de_dup=False):
+        super().__init__(game, mode, rng, de_dup)
 
     def explore(self, fuzz_seed):
         super().set_deviations()
@@ -53,8 +54,8 @@ class LookAheadOracle(Oracle):
 
 
 class MetamorphicOracle(Oracle):
-    def __init__(self, game, mode, rng):
-        super().__init__(game, mode, rng)
+    def __init__(self, game, mode, rng, de_dup=False):
+        super().__init__(game, mode, rng, de_dup)
 
     def explore(self, fuzz_seed):
         self.game.env.reset(rng=self.rng)
@@ -65,19 +66,20 @@ class MetamorphicOracle(Oracle):
         agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
 
         v = fuzz_seed.data[-1]
-        street = copy.deepcopy(fuzz_seed.state_env)
 
         car_positions = []
         free_positions = []
-        for lane_id, lane in enumerate(street):
+        for lane_id, lane in enumerate(fuzz_seed.state_env):
             for spot_id, spot in enumerate(lane):
                 if (spot is not None) and (str(spot) != "A"):
                     car_positions.append((lane_id, spot_id))
                 if spot is None:
                     free_positions.append((lane_id, spot_id))
 
-
+        bug_states = []
         for idx in range(SEARCH_BUDGET):
+            street = copy.deepcopy(fuzz_seed.state_env)
+
             # make map EASIER
             if idx % 2 == 0:
                 # if we make the map easier and the agent is crashing we cant claim any bug in this mode
@@ -93,9 +95,13 @@ class MetamorphicOracle(Oracle):
 
                 self.game.env.set_state(street, v)
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+
+                if self.de_dup and list(state_nn) not in bug_states: continue
+
                 mut_reward, _, fp = self.game.run_pol_fuzz(state_nn, mode=self.mode)
                 if agent_reward - mut_reward > DELTA:
                     num_warning_easy += 1
+                    bug_states.append(list(state_nn))
             # make map HARDER
             else:
                 # in hard configuration there can be only one buggy state
@@ -113,12 +119,14 @@ class MetamorphicOracle(Oracle):
 
                 self.game.env.set_state(street, v)
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
+
+                if self.de_dup and list(state_nn) not in bug_states: continue
+
                 mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 
                 if mut_reward - agent_reward > DELTA:
                     num_warning_hard = 1
-
-            street = copy.deepcopy(fuzz_seed.state_env)
+                    bug_states.append(list(state_nn))
 
         return num_warning_easy, num_warning_hard
 
