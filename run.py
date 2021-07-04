@@ -91,9 +91,12 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
     logger.info("    Variance in number of warnings found in states: %s" % str(all_variances_mm))
     logger.info("    Percentage of states with at least one warning: %s" % str(all_ind_warns_mm))
 
-    plot_rq3_time(population_summaries, resulting_pools)
+    # plot_rq3_time(population_summaries, resulting_pools)
 
     return all_tot_warns_mm, all_ind_warns_mm, all_variances_mm  # all_tot_warns_la, all_ind_warns_la, all_variances_la,
+
+
+fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
 
 # SET SEED IN FUZZ_CONFIG
 oracle_type = "metamorphic"
@@ -101,7 +104,7 @@ fuzz_type = "gbox"
 coverage = "raw"
 bug_type = "qualitative"
 loggername = "fuzz_logger"
-logfilename = "policy_testing_%s.log" % time.strftime("%Y%m%d_%H%M%S")
+logfilename = "logs/policy_testing_%s.log" % fuzz_start_time
 logger = setup_logger(loggername, logfilename)
 
 logger.info("#############################")
@@ -119,7 +122,7 @@ for f in listdir("policies"):
     if isfile(join("policies", f)) and "agent8" in f:
         ppaths.append(join("policies", f))
 
-workbook = xlsxwriter.Workbook('out.xlsx')
+workbook = xlsxwriter.Workbook('logs/out_%s.xlsx' % fuzz_start_time)
 
 for idx, pp in enumerate(ppaths):
     pname = pp.split("/")[-1].split(".")[0]
@@ -132,7 +135,7 @@ for idx, pp in enumerate(ppaths):
 
     worksheet = workbook.add_worksheet()
 
-    report = [bug_type, coverage, pname, RANDOM_SEEDS, tot_mm, ind_mm, var_mm]
+    report = [bug_type, coverage, pname, str(RANDOM_SEEDS), str(tot_mm), str(ind_mm), str(var_mm)]
     worksheet.write_row(idx, 0, report)
 
     # with open("results/outs.csv", mode="a") as fw:
