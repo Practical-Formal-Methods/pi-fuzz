@@ -1,5 +1,5 @@
 import time
-import numpy as np
+import xlsxwriter
 from os import listdir
 from os.path import isfile, join
 
@@ -119,6 +119,7 @@ for f in listdir("policies"):
     if isfile(join("policies", f)) and "agent8" in f:
         ppaths.append(join("policies", f))
 
+workbook = xlsxwriter.Workbook('out.xlsx')
 
 for idx, pp in enumerate(ppaths):
     pname = pp.split("/")[-1].split(".")[0]
@@ -129,6 +130,11 @@ for idx, pp in enumerate(ppaths):
 
     tot_mm, ind_mm, var_mm = fuzz_func(fuzz_type, pp, bug_type, coverage)
 
-    with open("results/outs.csv", mode="a") as fw:
-        row = "%s; %s; %s; %s; %s; %s; %s\n" % (bug_type, coverage, pname, RANDOM_SEEDS, tot_mm, ind_mm, var_mm)
-        fw.write(row)
+    worksheet = workbook.add_worksheet()
+
+    report = [bug_type, coverage, pname, RANDOM_SEEDS, tot_mm, ind_mm, var_mm]
+    worksheet.write_row(idx, 0, report)
+
+    # with open("results/outs.csv", mode="a") as fw:
+    #     row = "%s; %s; %s; %s; %s; %s; %s\n" % (bug_type, coverage, pname, RANDOM_SEEDS, tot_mm, ind_mm, var_mm)
+    #     fw.write(row)
