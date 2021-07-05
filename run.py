@@ -32,10 +32,12 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
 
         mutator = Mutator.RandomActionMutator(game)
         schedule = Scheduler.QueueScheduler()
-        # la_oracle = Oracle.LookAheadOracle(game, mode=bug_type)
+        
+        # la_oracle = Oracle.LookAheadOracle(game, mode=bug_type, rng=orcl_rngs[r_id])
+        
         fuzzer = Fuzzer.Fuzzer(rng=fuzz_rngs[r_id], fuzz_type=fuzz_type, fuzz_game=game, schedule=schedule, mutator=mutator, coverage=coverage)
 
-        mm_oracle = Oracle.MetamorphicOracle(game, mode=bug_type, rng=orcl_rngs[r_id])
+        mm_oracle = Oracle.MetamorphicOracle(game, mode=bug_type, rng=orcl_rngs[r_id], de_dup=True)
 
         logger.info("\n====================")
         logger.info("Fuzz %d Starts Here" % r_id)
@@ -102,7 +104,7 @@ fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
 oracle_type = "metamorphic"
 fuzz_type = "gbox"
 coverage = "raw"
-bug_type = "qualitative"
+bug_type = "quantitative"
 loggername = "fuzz_logger"
 logfilename = "logs/policy_testing_%s.log" % fuzz_start_time
 logger = setup_logger(loggername, logfilename)
@@ -117,12 +119,13 @@ logger.info("Bug Type: %s", bug_type)
 logger.info("Coverage Type: %s", coverage)
 logger.info("Oracle Type: %s", oracle_type)
 
+agent_id =  "agent15" 
 ppaths = []
 for f in listdir("policies"):
-    if isfile(join("policies", f)) and "agent8" in f:
+    if isfile(join("policies", f)) and agent_id in f:
         ppaths.append(join("policies", f))
 
-workbook = xlsxwriter.Workbook('logs/out_%s.xlsx' % fuzz_start_time)
+workbook = xlsxwriter.Workbook('logs/out_%s_%s_dedup.xlsx' % (agent_id, fuzz_start_time))
 worksheet = workbook.add_worksheet()
 
 for idx, pp in enumerate(ppaths):
@@ -134,7 +137,7 @@ for idx, pp in enumerate(ppaths):
 
     tot_mm, ind_mm, var_mm = fuzz_func(fuzz_type, pp, bug_type, coverage)
 
-    report = [bug_type, coverage, pname, RANDOM_SEEDS, tot_mm, ind_mm, var_mm]
+    report = [bug_type, coverage, pname, str(RANDOM_SEEDS), str(tot_mm), str(ind_mm), str(var_mm)]
     worksheet.write_row(idx, 0, report)
 
     # with open("results/outs.csv", mode="a") as fw:

@@ -36,6 +36,7 @@ class LookAheadOracle(Oracle):
 
     def explore(self, fuzz_seed):
         super().set_deviations()
+        self.game.env.reset(rng=self.rng)
         num_warning = 0
         self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
         agent_reward, _, fp = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
@@ -50,7 +51,7 @@ class LookAheadOracle(Oracle):
             if dev_reward - agent_reward > DELTA:
                 num_warning += 1
 
-        return num_warning
+        return num_warning, 0
 
 
 class MetamorphicOracle(Oracle):
@@ -83,7 +84,7 @@ class MetamorphicOracle(Oracle):
             # make map EASIER
             if idx % 2 == 0:
                 # if we make the map easier and the agent is crashing we cant claim any bug in this mode
-                if self.mode == "qualitative" and agent_reward < 0:
+                if self.mode == "qualitative" and agent_reward <= 0:
                     continue
 
                 mut_ind = self.rng.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
@@ -95,10 +96,9 @@ class MetamorphicOracle(Oracle):
 
                 self.game.env.set_state(street, v)
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
-
-                if self.de_dup and list(state_nn) not in bug_states: continue
-
                 mut_reward, _, fp = self.game.run_pol_fuzz(state_nn, mode=self.mode)
+                
+                if self.de_dup and list(state_nn) in bug_states: continue
                 if agent_reward - mut_reward > DELTA:
                     num_warning_easy += 1
                     bug_states.append(list(state_nn))
@@ -119,11 +119,9 @@ class MetamorphicOracle(Oracle):
 
                 self.game.env.set_state(street, v)
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
-
-                if self.de_dup and list(state_nn) not in bug_states: continue
-
                 mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 
+                if self.de_dup and list(state_nn) in bug_states: continue
                 if mut_reward - agent_reward > DELTA:
                     num_warning_hard = 1
                     bug_states.append(list(state_nn))
