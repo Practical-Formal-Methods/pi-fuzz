@@ -46,9 +46,7 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
         pop_summ = fuzzer.fuzz()
         population_summaries.append(pop_summ)
         resulting_pools.append(fuzzer.pool)
-        plot_rq3_time(population_summaries, resulting_pools)  # plot graph
-
-        continue
+        # plot_rq3_time(population_summaries, resulting_pools)  # plot graph
 
         warnings_mm = []
         for idx, fuzz_seed in enumerate(fuzzer.pool):
@@ -86,7 +84,7 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
         logger.info("Fuzz %d Ends Here. It took %d seconds." % (r_id, int(fuzz_et-fuzz_st)))
         logger.info("======================================")
 
-    # plot_rq3_time(population_summaries, resulting_pools)  # plot graph
+    plot_rq3_time(population_summaries, resulting_pools)  # plot graph
 
     # logger.info("Lookahead Oracle summary in %d fuzz runs:" % fuzz_runs)
     # logger.info("    Total number of warnings: %s" % str(all_tot_warns_la))
