@@ -25,14 +25,6 @@ class Fuzzer:
 
     # @profile
     def fuzz(self):
-        # time start
-        population_summary = self.populate_pool()
-        # time end
-        logger.info("Pool Budget: %d, Size of the Pool: %d" % (POOL_BUDGET, len(self.pool)))
-
-        return population_summary
-
-    def populate_pool(self):
         population_summary = []
         self.game.env.reset()
         state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
@@ -53,15 +45,19 @@ class Fuzzer:
                 cand_nn, cand_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
 
             # time start
-            if cand_nn is not None and self.is_interesting(cand_nn):
+            if self.is_interesting(cand_nn):
                 self.pool.append(Seed(cand_nn, cand_env, trial, time.perf_counter()-start_time))
 
-            population_summary.append((time.perf_counter()-start_time, trial, len(self.pool)))
+            population_summary.append([trial, time.perf_counter()-start_time, len(self.pool)])
             # time end
+
+        logger.info("Pool Budget: %d, Size of the Pool: %d" % (POOL_BUDGET, len(self.pool)))
 
         return population_summary
 
     def is_interesting(self, cand):
+        if cand is None: return False
+
         if self.cov_type == "abs":
             cand = torch.tensor(cand).float()
             cand = self.game.model.qnetwork_target.hidden(cand)

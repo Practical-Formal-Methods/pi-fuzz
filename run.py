@@ -32,11 +32,10 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
 
         mutator = Mutator.RandomActionMutator(game)
         schedule = Scheduler.QueueScheduler()
-        
-        # la_oracle = Oracle.LookAheadOracle(game, mode=bug_type, rng=orcl_rngs[r_id])
-        
+
         fuzzer = Fuzzer.Fuzzer(rng=fuzz_rngs[r_id], fuzz_type=fuzz_type, fuzz_game=game, schedule=schedule, mutator=mutator, coverage=coverage)
 
+        # la_oracle = Oracle.LookAheadOracle(game, mode=bug_type, rng=orcl_rngs[r_id])
         mm_oracle = Oracle.MetamorphicOracle(game, mode=bug_type, rng=orcl_rngs[r_id], de_dup=True)
 
         logger.info("\n====================")
@@ -47,6 +46,9 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
         pop_summ = fuzzer.fuzz()
         population_summaries.append(pop_summ)
         resulting_pools.append(fuzzer.pool)
+        plot_rq3_time(population_summaries, resulting_pools)  # plot graph
+
+        continue
 
         warnings_mm = []
         for idx, fuzz_seed in enumerate(fuzzer.pool):
@@ -84,6 +86,8 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
         logger.info("Fuzz %d Ends Here. It took %d seconds." % (r_id, int(fuzz_et-fuzz_st)))
         logger.info("======================================")
 
+    # plot_rq3_time(population_summaries, resulting_pools)  # plot graph
+
     # logger.info("Lookahead Oracle summary in %d fuzz runs:" % fuzz_runs)
     # logger.info("    Total number of warnings: %s" % str(all_tot_warns_la))
     # logger.info("    Variance in number of warnings found in states: %s" % str(all_variances_la))
@@ -92,8 +96,6 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
     logger.info("    Total number of warnings: %s" % str(all_tot_warns_mm))
     logger.info("    Variance in number of warnings found in states: %s" % str(all_variances_mm))
     logger.info("    Percentage of states with at least one warning: %s" % str(all_ind_warns_mm))
-
-    # plot_rq3_time(population_summaries, resulting_pools)
 
     return all_tot_warns_mm, all_ind_warns_mm, all_variances_mm  # all_tot_warns_la, all_ind_warns_la, all_variances_la,
 
@@ -119,7 +121,7 @@ logger.info("Bug Type: %s", bug_type)
 logger.info("Coverage Type: %s", coverage)
 logger.info("Oracle Type: %s", oracle_type)
 
-agent_id =  "agent15" 
+agent_id = "agent8"
 ppaths = []
 for f in listdir("policies"):
     if isfile(join("policies", f)) and agent_id in f:
