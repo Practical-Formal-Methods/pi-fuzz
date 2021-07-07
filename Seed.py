@@ -2,7 +2,7 @@ import copy
 import numpy as np
 
 class Seed(object):
-    def __init__(self, state_nn, state_env, gen_time, gen_trial):
+    def __init__(self, state_nn, state_env, gen_trial, gen_time):
         self.data = state_nn
         self.state_env = copy.copy(state_env)
         self.reward = 0
