@@ -65,7 +65,7 @@ class MetamorphicOracle(Oracle):
         num_warning_hard = 0
         self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
         agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
-        fw = open("rew.log", "a")
+        fw = open("rew_agent12_2.csv", "a")
 
         v = fuzz_seed.data[-1]
 
@@ -103,9 +103,9 @@ class MetamorphicOracle(Oracle):
                 if agent_reward - mut_reward > DELTA:
                     num_warning_easy += 1
                     bug_states.append(list(state_nn))
-                    fw.write("FSEED%d, E, BUG, %d, %d\n" % (fuzz_seed.trial, mut_reward, agent_reward))
+                    fw.write("FSEED%d, E, BUG, %d, %d\n" % (fuzz_seed.gen_trial, mut_reward, agent_reward))
                 else:
-                    fw.write("FSEED%d, E, NOBUG, %d, %d\n" % (fuzz_seed.trial, mut_reward, agent_reward))
+                    fw.write("FSEED%d, E, NOBUG, %d, %d\n" % (fuzz_seed.gen_trial, mut_reward, agent_reward))
 
             # make map HARDER
             else:
@@ -130,9 +130,9 @@ class MetamorphicOracle(Oracle):
                 if mut_reward - agent_reward > DELTA:
                     num_warning_hard = 1
                     bug_states.append(list(state_nn))
-                    fw.write("FSEED%d, H, BUG, %d, %d\n" % (fuzz_seed.trial, mut_reward, agent_reward))
+                    fw.write("FSEED%d, H, BUG, %d, %d\n" % (fuzz_seed.gen_trial, mut_reward, agent_reward))
                 else:
-                    fw.write("FSEED%d, H, NOBUG, %d, %d\n" % (fuzz_seed.trial, mut_reward, agent_reward))
+                    fw.write("FSEED%d, H, NOBUG, %d, %d\n" % (fuzz_seed.gen_trial, mut_reward, agent_reward))
 
         fw.close()
 
