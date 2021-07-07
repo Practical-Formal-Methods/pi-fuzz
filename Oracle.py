@@ -85,8 +85,8 @@ class MetamorphicOracle(Oracle):
             # make map EASIER
             if idx % 2 == 0:
                 # if we make the map easier and the agent is crashing we cant claim any bug in this mode
-                if self.mode == "qualitative" and agent_reward <= 0:
-                    continue
+                # if self.mode == "qualitative" and agent_reward <= 0:
+                #     continue
 
                 mut_ind = self.rng.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
                 mut_positions = np.array(car_positions)[mut_ind]
@@ -110,11 +110,11 @@ class MetamorphicOracle(Oracle):
             # make map HARDER
             else:
                 # in hard configuration there can be only one buggy state
-                if num_warning_hard:
-                    continue
+                # if num_warning_hard:
+                #     continue
                 # if we make the map harder and the agent is winning we cant claim any bug in this mode
-                if self.mode == "qualitative" and agent_reward > 0:
-                    continue
+                # if self.mode == "qualitative" and agent_reward > 0:
+                #     continue
 
                 mut_ind = self.rng.choice(len(free_positions), MM_MUT_MAGNITUDE, replace=False)
                 mut_positions = np.array(free_positions)[mut_ind]
