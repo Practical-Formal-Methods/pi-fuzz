@@ -28,7 +28,7 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
     all_ind_warns_mm = []
     for r_id in range(N_FUZZ_RUNS):
 
-        fw = open("rew.log", "a")
+        fw = open("rew_agent12_2.csv", "a")
         fw.write("FUZZ_RUN: %d\n" % (r_id))
         fw.close()
 
