@@ -2,18 +2,17 @@ from linetrack.dqn.agent import Pseudo_Agent, Agent
 from linetrack.model.model import Linetrack
 
 class Wrapper():
-    def __init__(self, load_path):
-        self.load_path = load_path
+    def __init__(self):
         self.action_space = range(5)
 
         self.env = None
         self.initial_state = None
         self.model = None
 
-    def create_linetrack_model(self, rng):
-        ag = Agent(self.env, rng, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
+    def create_linetrack_model(self, load_path, r_seed):
+        ag = Agent(self.env, r_seed, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
                   eps_decay=0.999, learning_count=0)
-        ag.load(self.load_path, None)  # second parameter is useless here
+        ag.load(load_path, None)  # second parameter is useless here
         self.model = ag
         print('Model created.')
 
