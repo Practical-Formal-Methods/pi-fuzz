@@ -27,6 +27,10 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
     all_ind_warns_mm = []
     for r_id in range(N_FUZZ_RUNS):
 
+        fw = open("rew.log", "a")
+        fw.write("FUZZ_RUN: %d\n" % (r_id))
+        fw.close()
+
         game = EW.Wrapper(agent_path)
         game.create_linetrack_environment(rng=env_rngs[r_id])
         game.create_linetrack_model(rng=agent_rngs[r_id])

@@ -65,6 +65,7 @@ class MetamorphicOracle(Oracle):
         num_warning_hard = 0
         self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
         agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
+        fw = open("rew.log", "a")
 
         v = fuzz_seed.data[-1]
 
@@ -97,11 +98,15 @@ class MetamorphicOracle(Oracle):
                 self.game.env.set_state(street, v)
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
                 mut_reward, _, fp = self.game.run_pol_fuzz(state_nn, mode=self.mode)
-                
+
                 if self.de_dup and list(state_nn) in bug_states: continue
                 if agent_reward - mut_reward > DELTA:
                     num_warning_easy += 1
                     bug_states.append(list(state_nn))
+                    fw.write("FSEED%d, E, BUG, %d, %d\n" % (fuzz_seed.trial, mut_reward, agent_reward))
+                else:
+                    fw.write("FSEED%d, E, NOBUG, %d, %d\n" % (fuzz_seed.trial, mut_reward, agent_reward))
+
             # make map HARDER
             else:
                 # in hard configuration there can be only one buggy state
@@ -125,6 +130,11 @@ class MetamorphicOracle(Oracle):
                 if mut_reward - agent_reward > DELTA:
                     num_warning_hard = 1
                     bug_states.append(list(state_nn))
+                    fw.write("FSEED%d, H, BUG, %d, %d\n" % (fuzz_seed.trial, mut_reward, agent_reward))
+                else:
+                    fw.write("FSEED%d, H, NOBUG, %d, %d\n" % (fuzz_seed.trial, mut_reward, agent_reward))
+
+        fw.close()
 
         return num_warning_easy, num_warning_hard
 
