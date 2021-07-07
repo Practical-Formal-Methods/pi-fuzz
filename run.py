@@ -1,4 +1,5 @@
 import time
+import argparse
 import xlsxwriter
 from os import listdir
 from os.path import isfile, join
@@ -33,7 +34,7 @@ def fuzz_func(fuzz_type, agent_path, bug_type, coverage):
 
         game = EW.Wrapper(agent_path)
         game.create_linetrack_environment(rng=env_rngs[r_id])
-        game.create_linetrack_model(rng=agent_rngs[r_id])
+        game.create_linetrack_model(rng=r_id)
 
         mutator = Mutator.RandomActionMutator(game)
         schedule = Scheduler.QueueScheduler()
@@ -116,7 +117,7 @@ fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
 oracle_type = "metamorphic"
 fuzz_type = "gbox"
 coverage = "raw"
-bug_type = "quantitative"
+bug_type = "qualitative"
 loggername = "fuzz_logger"
 logfilename = "logs/policy_testing_%s.log" % fuzz_start_time
 logger = setup_logger(loggername, logfilename)
@@ -131,7 +132,12 @@ logger.info("Bug Type: %s", bug_type)
 logger.info("Coverage Type: %s", coverage)
 logger.info("Oracle Type: %s", oracle_type)
 
-agent_id = "agent8"
+
+parser = argparse.ArgumentParser()
+parser.add_argument("agent_name")
+args = parser.parse_args()
+
+agent_id = args.agent_name # "agent8_bad"
 ppaths = []
 for f in listdir("policies"):
     if isfile(join("policies", f)) and agent_id in f:
