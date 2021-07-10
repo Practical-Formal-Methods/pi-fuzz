@@ -59,7 +59,7 @@ class MetamorphicOracle(Oracle):
         super().__init__(game, mode, rng, de_dup)
 
     def explore(self, fuzz_seed):
-        self.game.env.reset(rng=self.rng)
+        # self.game.env.reset(rng=self.rng)  # env re-created  in run.py before calling explore
 
         num_warning_easy = 0
         num_warning_hard = 0

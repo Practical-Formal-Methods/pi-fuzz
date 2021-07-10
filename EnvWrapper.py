@@ -13,8 +13,9 @@ class Wrapper():
         ag = Agent(self.env, r_seed, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
                   eps_decay=0.999, learning_count=0)
         ag.load(load_path, None)  # second parameter is useless here
+        # print('Model loaded from %s.' % load_path)
+
         self.model = ag
-        print('Model created.')
 
 
     def create_linetrack_environment(self, rng):
@@ -24,7 +25,7 @@ class Wrapper():
         ratios = [0.02, 0.1]
         env = Linetrack(num_lines=num_lines, length_lines=length_lines, rng=rng, mode='line_ratio', ratios=ratios, input_stripe=True)
         self.env = env
-        print('Environment created.')
+        # print('Environment created.')
 
     # @profile
     def run_pol_fuzz(self, init_state, lahead_seq=None, mode="quantitative"):
