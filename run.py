@@ -34,7 +34,6 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
 
         game = EW.Wrapper()
         game.create_linetrack_environment(rng=env_rngs[r_id])
-
         mutator = Mutator.RandomActionMutator(game)
         schedule = Scheduler.QueueScheduler()
 
@@ -48,17 +47,17 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
         population_summaries.append(pop_summ)
         resulting_pools.append(fuzzer.pool)
 
-        print(len(fuzzer.pool))
         all_rews = []
         for ap in agent_paths:
+            game.create_linetrack_model(load_path=ap, r_seed=r_id)
             rews = []
             for sd in fuzzer.pool:
                 env_rng = np.random.default_rng(r_id)
-                game.create_linetrack_environment(rng=env_rng)   # s[r_id])
-                game.create_linetrack_model(load_path=ap, r_seed=r_id)
+                game.env.reset(rng=env_rng)  # reset the RNG
                 game.env.set_state(sd.state_env, sd.data[-1])
-                rew, _, _ = game.run_pol_fuzz(sd.data, mode=bug_type)
+                rew, _, fp = game.run_pol_fuzz(sd.data, mode="qualitative")  # this is always qualitative
                 rews.append(rew)
+
             all_rews.append(rews)
 
         mean_rews = np.mean(np.array(all_rews), axis=0)
@@ -79,14 +78,13 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
             orcl_rng = np.random.default_rng(r_id)  # orcl_rngs[r_id]
             mm_oracle = Oracle.MetamorphicOracle(game, mode=bug_type, rng=orcl_rng, de_dup=True)
 
+            game.create_linetrack_model(load_path=ap, r_seed=r_id)
+
             warnings_mm_e = []
             warnings_mm_h = []
             for idx, fuzz_seed in enumerate(fltr_pool):
                 env_rng = np.random.default_rng(r_id)
-                game.create_linetrack_environment(rng=env_rng)   # s[r_id])
-                game.create_linetrack_model(load_path=ap, r_seed=r_id)
-
-                game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
+                game.env.reset(rng=env_rng)   # s[r_id])
 
                 num_warn_mm_e, num_warn_mm_h = mm_oracle.explore(fuzz_seed)
                 num_warn_mm_tot = num_warn_mm_e + num_warn_mm_h

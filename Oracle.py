@@ -59,7 +59,7 @@ class MetamorphicOracle(Oracle):
         super().__init__(game, mode, rng, de_dup)
 
     def explore(self, fuzz_seed):
-        # self.game.env.reset(rng=self.rng)  # env re-created  in run.py before calling explore
+        # self.game.env.reset(rng=self.rng)  # env resetted in run.py before calling explore
 
         num_warning_easy = 0
         num_warning_hard = 0
@@ -80,13 +80,10 @@ class MetamorphicOracle(Oracle):
         bug_states = []
         for idx in range(SEARCH_BUDGET):
             street = copy.deepcopy(fuzz_seed.state_env)
+            exp_rng = np.random.default_rng(idx)
 
             # make map EASIER
             if idx % 2 == 0:
-                # if we make the map easier and the agent is crashing we cant claim any bug in this mode
-                # if self.mode == "qualitative" and agent_reward <= 0:
-                #     continue
-
                 mut_ind = self.rng.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
                 mut_positions = np.array(car_positions)[mut_ind]
 
@@ -94,8 +91,10 @@ class MetamorphicOracle(Oracle):
                 for pos in mut_positions:
                     street[pos[0]][pos[1]] = None
 
+                self.game.env.reset(rng=exp_rng)
                 self.game.env.set_state(street, v)
-                state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+                state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+
                 mut_reward, _, fp = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 
                 if self.de_dup and list(state_nn) in bug_states: continue
@@ -105,21 +104,16 @@ class MetamorphicOracle(Oracle):
 
             # make map HARDER
             else:
-                # in hard configuration there can be only one buggy state
-                # if num_warning_hard:
-                #     continue
-                # if we make the map harder and the agent is winning we cant claim any bug in this mode
-                # if self.mode == "qualitative" and agent_reward > 0:
-                #     continue
-
                 mut_ind = self.rng.choice(len(free_positions), MM_MUT_MAGNITUDE, replace=False)
                 mut_positions = np.array(free_positions)[mut_ind]
 
                 for pos in mut_positions:
                     street[pos[0]][pos[1]] = self.game.env.get_new_car(pos[0])
 
+                self.game.env.reset(rng=exp_rng)
                 self.game.env.set_state(street, v)
                 state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
+
                 mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 
                 if self.de_dup and list(state_nn) in bug_states: continue
