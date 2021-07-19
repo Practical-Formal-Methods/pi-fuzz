@@ -16,7 +16,7 @@ from fuzz_config import RANDOM_SEEDS, N_FUZZ_RUNS
 
 def test_policy(fuzz_type, agent_paths, bug_type, coverage):
 
-    workbook = xlsxwriter.Workbook('logs/out_%s_%s_dedup.xlsx' % (agent_id, fuzz_start_time))
+    workbook = xlsxwriter.Workbook('logs/out_%s_%s_dedup_%s.xlsx' % (agent_id, fuzz_start_time, fuzz_type))
     worksheet = workbook.add_worksheet()
     header = ["fuzz_run_id", "bug_type", "coverage", "agent_name", "#easy_warns", "#hard_warns"]
     worksheet.write_row(0, 0, header)
@@ -57,9 +57,8 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
                 game.env.set_state(sd.state_env, sd.data[-1])
                 rew, _, fp = game.run_pol_fuzz(sd.data, mode="qualitative")  # this is always qualitative
                 rews.append(rew)
-
             all_rews.append(rews)
-
+        
         mean_rews = np.mean(np.array(all_rews), axis=0)
 
         fltr_pool = []
@@ -123,7 +122,6 @@ fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
 
 # SET SEED IN FUZZ_CONFIG
 oracle_type = "metamorphic"
-fuzz_type = "gbox"
 coverage = "raw"
 bug_type = "qualitative"
 loggername = "fuzz_logger"
@@ -143,13 +141,15 @@ logger.info("Oracle Type: %s", oracle_type)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("agent_name")
+parser.add_argument("fuzz_type")
 args = parser.parse_args()
 
-agent_id = args.agent_name # "agent8_bad"
-ppaths = []
-for f in listdir("policies"):
-    if isfile(join("policies", f)) and agent_id in f:
-        ppaths.append(join("policies", f))
+agent_id = args.agent_name
+fuzz_type = args.fuzz_type
 
+ppaths = []
+for f in listdir("final_policies"):
+    if isfile(join("final_policies", f)) and agent_id in f:
+        ppaths.append(join("final_policies", f))
 
 tot_mm_e, tot_mm_h, ind_mm, var_mm = test_policy(fuzz_type, ppaths, bug_type, coverage)

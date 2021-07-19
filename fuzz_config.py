@@ -1,10 +1,10 @@
-SEARCH_BUDGET = 360
+SEARCH_BUDGET = 60
 COV_DIST_THOLD = 4  # euclidean
 MM_MUT_MAGNITUDE = 2
 LA_MUT_MAGNITUDE = 3
 POOL_POP_MUT = 3
-POOL_BUDGET = 300  # seconds
+POOL_BUDGET = 600  # seconds
 DEVIATION_DEPTH = 3
-DELTA = 1  # quantitative oracle ensures there is a flaw
+DELTA = 3  # quantitative oracle ensures there is a flaw
 N_FUZZ_RUNS = 8
 RANDOM_SEEDS = [0, 1, 2, 3, 4, 5, 6, 7] # IMPORTANT FOR REPRODUCABILITY
