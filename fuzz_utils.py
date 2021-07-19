@@ -7,10 +7,16 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from fuzz_config import COV_DIST_THOLD, POOL_BUDGET, N_FUZZ_RUNS, RANDOM_SEEDS
 
-def plot_rq3_time(pool_pop_summ, pools):
-    for idx, pp in enumerate(pool_pop_summ):
+def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
+
+    for pp in pool_pop_summ_gb:
         pp = np.array(pp)
-        plt.plot(pp[:, 1], pp[:, 2], lw=2, label=idx+1)
+        plt.plot(pp[:, 1], pp[:, 2], lw=2)
+
+    for pp in pool_pop_summ_bb:
+        pp = np.array(pp)
+        plt.plot(pp[:, 1], pp[:, 2], "--", lw=2)
+
     plt.savefig("results/rq3_poolovertime_timebdgt" + str(POOL_BUDGET) + ".pdf")
 
     # all_warn_seed_times = []

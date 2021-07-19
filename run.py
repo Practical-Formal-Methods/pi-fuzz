@@ -26,10 +26,8 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
     rep_line = 0
     resulting_pools = []
     population_summaries = []
-    all_variances_mm = []
     all_tot_warns_mm_e = []
     all_tot_warns_mm_h = []
-    all_ind_warns_mm = []
     for r_id in range(N_FUZZ_RUNS):
 
         game = EW.Wrapper()
@@ -46,6 +44,8 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
         pop_summ = fuzzer.fuzz()
         population_summaries.append(pop_summ)
         resulting_pools.append(fuzzer.pool)
+
+        continue
 
         all_rews = []
         for ap in agent_paths:
@@ -108,14 +108,13 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
             report = [r_id, bug_type, coverage, pname, tot_warns_mm_e, tot_warns_mm_h]
             worksheet.write_row(rep_line, 0, report)
 
-    # plot_rq3_time(population_summaries, resulting_pools)  # plot graph
     logger.info("Metamorphic Oracle summary in %d fuzz runs:" % N_FUZZ_RUNS)
     logger.info("    Total number of E warnings: %s" % str(all_tot_warns_mm_e))
     logger.info("    Total number of H warnings: %s" % str(all_tot_warns_mm_h))
 
     workbook.close()
 
-    return all_tot_warns_mm_e, all_tot_warns_mm_h, all_ind_warns_mm, all_variances_mm  # all_tot_warns_la, all_ind_warns_la, all_variances_la,
+    return population_summaries, resulting_pools
 
 
 fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
@@ -152,4 +151,6 @@ for f in listdir("final_policies"):
     if isfile(join("final_policies", f)) and agent_id in f:
         ppaths.append(join("final_policies", f))
 
-tot_mm_e, tot_mm_h, ind_mm, var_mm = test_policy(fuzz_type, ppaths, bug_type, coverage)
+population_summaries_gbox, _ = test_policy(fuzz_type, ppaths, "gbox", coverage)
+population_summaries_bbox, _ = test_policy(fuzz_type, ppaths, "bbox", coverage)
+plot_rq3_time(population_summaries_gbox, population_summaries_bbox)  # plot graph
