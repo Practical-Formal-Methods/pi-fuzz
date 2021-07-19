@@ -125,6 +125,15 @@ coverage = "raw"
 bug_type = "qualitative"
 loggername = "fuzz_logger"
 logfilename = "logs/policy_testing_%s.log" % fuzz_start_time
+
+parser = argparse.ArgumentParser()
+parser.add_argument("agent_name")
+parser.add_argument("fuzz_type")
+args = parser.parse_args()
+
+agent_id = args.agent_name
+fuzz_type = args.fuzz_type
+
 logger = setup_logger(loggername, logfilename)
 
 logger.info("#############################")
@@ -136,15 +145,6 @@ logger.info("Fuzzer type: %s", fuzz_type)
 logger.info("Bug Type: %s", bug_type)
 logger.info("Coverage Type: %s", coverage)
 logger.info("Oracle Type: %s", oracle_type)
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument("agent_name")
-parser.add_argument("fuzz_type")
-args = parser.parse_args()
-
-agent_id = args.agent_name
-fuzz_type = args.fuzz_type
 
 ppaths = []
 for f in listdir("final_policies"):
