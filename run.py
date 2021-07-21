@@ -4,13 +4,13 @@ import xlsxwriter
 import numpy as np
 from os import listdir
 from os.path import isfile, join
-
+import xlrd
 import Oracle
 import Scheduler
 import EnvWrapper as EW
 import Fuzzer
 import Mutator
-from fuzz_utils import post_fuzz_analysis, plot_rq3_time, setup_logger, set_rngs
+from fuzz_utils import post_fuzz_analysis, plot_rq3_warn, setup_logger, set_rngs, read_outs_excel
 from fuzz_config import RANDOM_SEEDS, N_FUZZ_RUNS
 
 
@@ -116,7 +116,6 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
 
     return population_summaries, resulting_pools
 
-
 fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
 
 # SET SEED IN FUZZ_CONFIG
@@ -151,6 +150,5 @@ for f in listdir("final_policies"):
     if isfile(join("final_policies", f)) and agent_id in f:
         ppaths.append(join("final_policies", f))
 
-population_summaries_gbox, _ = test_policy(fuzz_type, ppaths, "gbox", coverage)
-population_summaries_bbox, _ = test_policy(fuzz_type, ppaths, "bbox", coverage)
-plot_rq3_time(population_summaries_gbox, population_summaries_bbox)  # plot graph
+population_summaries, pools = test_policy(fuzz_type, ppaths, fuzz_type, coverage)
+plot_rq3_warn(pools)  # plot graph

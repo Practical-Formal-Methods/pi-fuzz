@@ -1,7 +1,11 @@
 import re
 import time
 import logging
+from os import listdir
+from os.path import isfile, join
+
 import numpy as np
+import pandas as pd
 import scipy.stats
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
@@ -19,24 +23,26 @@ def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
 
     plt.savefig("results/rq3_poolovertime_timebdgt" + str(POOL_BUDGET) + ".pdf")
 
-    # all_warn_seed_times = []
-    # for pool in pools:
-    #     warn_seed_times = []
-    #     for seed in pool:
-    #         if seed.num_warn_mm_hard or seed.num_warn_mm_easy:
-    #             warn_seed_times.append(seed.fuzz_time)
-    #     all_warn_seed_times.append(warn_seed_times)
-    #
-    # all_warns_over_time = []
-    # for ws_times in all_warn_seed_times:
-    #     warn_over_time = []
-    #     for sec in range(POOL_BUDGET):
-    #         warn_over_time.append(sum(wst < sec for wst in ws_times))
-    #     all_warns_over_time.append(warn_over_time)
-    #
-    # for wot in all_warns_over_time:
-    #     plt.plot(range(POOL_BUDGET), wot, lw=2)
-    # plt.savefig("results/rq3_warnovertime_timebdgt" + str(POOL_BUDGET) + ".pdf")
+
+def plot_rq3_warn(pools):
+    all_warn_seed_times = []
+    for pool in pools:
+        warn_seed_times = []
+        for seed in pool:
+            if seed.num_warn_mm_hard or seed.num_warn_mm_easy:
+                warn_seed_times.append(seed.fuzz_time)
+        all_warn_seed_times.append(warn_seed_times)
+
+    all_warns_over_time = []
+    for ws_times in all_warn_seed_times:
+        warn_over_time = []
+        for sec in range(POOL_BUDGET):
+            warn_over_time.append(sum(wst < sec for wst in ws_times))
+        all_warns_over_time.append(warn_over_time)
+
+    for wot in all_warns_over_time:
+        plt.plot(range(POOL_BUDGET), wot, lw=2)
+    plt.savefig("results/rq3_warnovertime_timebdgt" + str(POOL_BUDGET) + ".pdf")
 
 
 def plot_rq3_trial(pool_pop_summ, pool):
@@ -284,3 +290,36 @@ def coverage_update(covered, queries):
             new_coverage = True
 
     return covered, new_coverage
+
+def read_outs_excel(folder=None, fuzz_type="gbox"):
+    if folder is None:
+        folder = "quant_outs"
+    for f in listdir(folder):
+        if isfile(join(folder, f)) and fuzz_type in f:
+            agent_id = f.split("_")[1]
+            print(agent_id)
+            ppath = join(folder, f)
+            data = pd.read_excel(ppath, engine='openpyxl')
+            df = pd.DataFrame(data, columns=['agent_name', 'bug_type', '#easy_warns', '#hard_warns'])
+            bug_type = df['bug_type'].unique()[0]
+            agent_names = df['agent_name'].unique()
+            agnt_ord_id = []
+            for ag_nm in agent_names:
+                agnt_ord_id.append(int(ag_nm.split('_')[1]))
+            agent_names_sorted = [ag_nm for _, ag_nm in sorted(zip(agnt_ord_id, agent_names), key=lambda pair: pair[0])]
+            all_warns = []
+            for ag_nm in agent_names_sorted:
+                sub_df = df.loc[df['agent_name'] == ag_nm]
+                warns = sub_df["#easy_warns"].to_numpy()
+                all_warns.append(warns)
+            boxplot(agent_id, fuzz_type, bug_type, all_warns)
+
+def boxplot(agent_id, fuzz_type, bug_type, num_tot_warn):
+    green_diamond = dict(markerfacecolor="g", marker="D")
+    fig, ax = plt.subplots()
+    ax.set_title("Num. of Warn / %s" % bug_type)
+    ax.set_ylabel("# Warnings")
+    ax.set_xlabel("Agent Quality (Higher Better)")
+    ax.boxplot(num_tot_warn, flierprops=green_diamond)
+    ax.set_xticklabels(["1", "2", "3", "4"])
+    plt.savefig("num_warn_%s_%s_%s.pdf" % (agent_id, fuzz_type, bug_type))
