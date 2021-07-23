@@ -24,13 +24,13 @@ def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
     plt.savefig("results/rq3_poolovertime_timebdgt" + str(POOL_BUDGET) + ".pdf")
 
 
-def plot_rq3_warn(pools):
+def sub_rq3_warn(pools):
     all_warn_seed_times = []
     for pool in pools:
         warn_seed_times = []
         for seed in pool:
             if seed.num_warn_mm_hard or seed.num_warn_mm_easy:
-                warn_seed_times.append(seed.fuzz_time)
+                warn_seed_times.append(seed.gen_time)
         all_warn_seed_times.append(warn_seed_times)
 
     all_warns_over_time = []
@@ -39,10 +39,39 @@ def plot_rq3_warn(pools):
         for sec in range(POOL_BUDGET):
             warn_over_time.append(sum(wst < sec for wst in ws_times))
         all_warns_over_time.append(warn_over_time)
+    
+    return all_warns_over_time
 
-    for wot in all_warns_over_time:
+def plot_rq3_warn(agent_id, pools_g, pools_b):
+    
+    all_warns_over_time_g = sub_rq3_warn(pools_g)
+    all_warns_over_time_b = sub_rq3_warn(pools_b)
+
+    a_w_o_t_g_mean = np.array(all_warns_over_time_g).mean(axis=0)
+    a_w_o_t_b_mean = np.array(all_warns_over_time_b).mean(axis=0)
+
+    a_w_o_t_g_std = np.array(all_warns_over_time_g).std(axis=0)
+    a_w_o_t_b_std = np.array(all_warns_over_time_b).std(axis=0)
+    
+    '''
+    for wot in all_warns_over_time_g:
         plt.plot(range(POOL_BUDGET), wot, lw=2)
-    plt.savefig("results/rq3_warnovertime_timebdgt" + str(POOL_BUDGET) + ".pdf")
+    
+    for wot in all_warns_over_time_b:
+        plt.plot(range(POOL_BUDGET), wot, "--", lw=2)
+    '''
+
+    plt.plot(range(POOL_BUDGET), a_w_o_t_g_mean, lw=2, label='graybox', color='blue')
+    plt.fill_between(range(POOL_BUDGET), a_w_o_t_g_mean+a_w_o_t_g_std, a_w_o_t_g_mean-a_w_o_t_g_std, facecolor='blue', alpha=0.5)
+    
+    plt.plot(range(POOL_BUDGET), a_w_o_t_b_mean, lw=2, label='blackbox', color='red')
+    plt.fill_between(range(POOL_BUDGET), a_w_o_t_b_mean+a_w_o_t_b_std, a_w_o_t_b_mean-a_w_o_t_b_std, facecolor='red', alpha=0.5)
+
+    plt.xlabel("Time(sec)")
+    plt.ylabel("# Warnings")
+    plt.legend(loc="upper left")
+
+    plt.savefig("results/rq3_warnovertime_mustd_timebdgt_%d_%s.pdf" % (POOL_BUDGET, agent_id) )
 
 
 def plot_rq3_trial(pool_pop_summ, pool):
