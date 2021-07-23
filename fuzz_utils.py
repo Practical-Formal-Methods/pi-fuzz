@@ -293,7 +293,9 @@ def coverage_update(covered, queries):
 
 def read_outs_excel(folder=None, fuzz_type="gbox"):
     if folder is None:
-        folder = "quant_outs"
+        folder = "outs"
+
+    all_warns = [[], [], [], []]
     for f in listdir(folder):
         if isfile(join(folder, f)) and fuzz_type in f:
             agent_id = f.split("_")[1]
@@ -307,12 +309,12 @@ def read_outs_excel(folder=None, fuzz_type="gbox"):
             for ag_nm in agent_names:
                 agnt_ord_id.append(int(ag_nm.split('_')[1]))
             agent_names_sorted = [ag_nm for _, ag_nm in sorted(zip(agnt_ord_id, agent_names), key=lambda pair: pair[0])]
-            all_warns = []
-            for ag_nm in agent_names_sorted:
+            for idx, ag_nm in enumerate(agent_names_sorted):
                 sub_df = df.loc[df['agent_name'] == ag_nm]
                 warns = sub_df["#easy_warns"].to_numpy()
-                all_warns.append(warns)
-            boxplot(agent_id, fuzz_type, bug_type, all_warns)
+                all_warns[idx] += list(warns)
+
+    boxplot("all_agents", fuzz_type, bug_type, all_warns)
 
 def boxplot(agent_id, fuzz_type, bug_type, num_tot_warn):
     green_diamond = dict(markerfacecolor="g", marker="D")
