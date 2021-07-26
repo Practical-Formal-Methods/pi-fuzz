@@ -80,7 +80,7 @@ class MetamorphicOracle(Oracle):
         bug_states = []
         for idx in range(SEARCH_BUDGET):
             street = copy.deepcopy(fuzz_seed.state_env)
-            exp_rng = np.random.default_rng(idx)
+            exp_rng = np.random.default_rng(123123)
 
             # make map EASIER
             if idx % 2 == 0:

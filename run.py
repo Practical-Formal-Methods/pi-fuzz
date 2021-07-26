@@ -31,7 +31,7 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
     for r_id in range(N_FUZZ_RUNS):
 
         game = EW.Wrapper()
-        game.create_linetrack_environment(rng=env_rngs[r_id])
+        game.create_linetrack_environment(rng=fuzz_rngs[r_id])
         mutator = Mutator.RandomActionMutator(game)
         schedule = Scheduler.QueueScheduler()
 
@@ -82,7 +82,7 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
             warnings_mm_e = []
             warnings_mm_h = []
             for idx, fuzz_seed in enumerate(fltr_pool):
-                env_rng = np.random.default_rng(r_id)
+                env_rng = np.random.default_rng(123123)
                 game.env.reset(rng=env_rng)   # s[r_id])
 
                 num_warn_mm_e, num_warn_mm_h = mm_oracle.explore(fuzz_seed)
