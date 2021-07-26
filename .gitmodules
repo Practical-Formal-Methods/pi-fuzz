@@ -4,3 +4,6 @@
 [submodule "mod_gym"]
 	path = mod_gym
 	url = https://github.com/Practical-Formal-Methods/mod_gym.git
+[submodule "linetrack"]
+	path = linetrack
+	url = https://github.com/TimoPGros/linetrack.git
