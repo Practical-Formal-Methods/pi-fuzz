@@ -50,7 +50,10 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
             game.create_model(ap)
             rews = []
             for sd in fuzzer.pool:
+                print(sd.hi_lvl_state)
                 game.env.reset(hi_lvl_state=sd.hi_lvl_state)
+                print(game.get_state())
+                exit()
                 # env_rng = np.random.default_rng(123123)
                 # game.env.reset(rng=env_rng)  # reset the RNG
                 # game.set_state([sd.hi_lvl_state, sd.data[-1]])
