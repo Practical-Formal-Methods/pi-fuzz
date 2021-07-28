@@ -13,7 +13,7 @@ class RandomActionMutator(Mutator):
         nn_state = seed.data
         self.wrapper.set_state([seed.hi_lvl_state, nn_state[-1]])
         for _ in range(POOL_POP_MUT):
-            act = rng.choice(self.wrapper.action_space, 1)
+            act = rng.choice(self.wrapper.action_space, 1)[0]
             _, nn_state, done = self.wrapper.env_step(act)
             if done:
                 return None, None

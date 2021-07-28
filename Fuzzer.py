@@ -41,7 +41,7 @@ class Fuzzer:
                 seed = self.schedule.choose(self.pool)
                 cand_nn, cand_hi_lvl = self.mutator.mutate(seed, self.rng)
             else:
-                self.game.env.reset(rng=self.rng)
+                self.game.env.reset()  # rng=self.rng)
                 cand_nn, cand_hi_lvl = self.game.get_state()
 
             # time start
@@ -70,7 +70,7 @@ class Fuzzer:
                 ex_sd_data = torch.tensor(ex_sd_data).float()
                 ex_sd_data = self.game.model.qnetwork_target.hidden(ex_sd_data)
                 ex_sd_data = ex_sd_data.detach().numpy()
-            dist = np.linalg.norm(cand - ex_sd_data, ord=2)
+            dist = np.linalg.norm(np.array(cand) - np.array(ex_sd_data), ord=2)
             if dist < d_shortest:
                 d_shortest = dist
 

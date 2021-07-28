@@ -69,7 +69,7 @@ class Wrapper():
     def model_step(self, state):
         act = None
         if self.env_iden == "lunar":
-            act = self.model.predict(state, deterministic=True)
+            act, _ = self.model.predict(state, deterministic=True)
         elif self.env_iden == "linetrack":
             act = self.model.act(state)
 
@@ -78,7 +78,7 @@ class Wrapper():
     def env_step(self, action):
         reward, next_state, done = None, None, None
         if self.env_iden == "lunar":
-            reward, next_state, done, info = self.env.step(action)
+            next_state, reward, done, info = self.env.step(action)
         elif self.env_iden == "linetrack":
             next_state, reward, done = self.env.step(action)
 
