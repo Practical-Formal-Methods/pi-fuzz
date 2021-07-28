@@ -58,12 +58,11 @@ class Wrapper():
 
         return nn_state, hi_lvl_state
 
-    def set_state(self, state_inf):
-        hi_lvl_state, v = state_inf
+    def set_state(self, hi_lvl_state, extra=None):
         if self.env_iden == "lunar":
             self.env.set_state(hi_lvl_state)
         elif self.env_iden == "linetrack":
-            self.env.set_state(hi_lvl_state, v)
+            self.env.set_state(hi_lvl_state, extra)
 
 
     def model_step(self, state):

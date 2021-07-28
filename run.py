@@ -44,22 +44,22 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
         pop_summ = fuzzer.fuzz()
         population_summaries.append(pop_summ)
         resulting_pools.append(fuzzer.pool)
-
+        
+        print(len(fuzzer.pool))
         all_rews = []
         for ap in agent_paths:
             game.create_model(ap)
             rews = []
             for sd in fuzzer.pool:
-                print(sd.hi_lvl_state)
-                game.env.reset(hi_lvl_state=sd.hi_lvl_state)
-                print(game.get_state())
-                exit()
+                game.env.reset()  # hi_lvl_state=sd.hi_lvl_state)
+                game.set_state(sd.hi_lvl_state)
                 # env_rng = np.random.default_rng(123123)
                 # game.env.reset(rng=env_rng)  # reset the RNG
                 # game.set_state([sd.hi_lvl_state, sd.data[-1]])
                 rew, fp = game.run_pol_fuzz(sd.data, mode="qualitative")  # this is always qualitative
                 rews.append(rew)
             all_rews.append(rews)
+        print(all_rews)
         exit()
         mean_rews = np.mean(np.array(all_rews), axis=0)
 
