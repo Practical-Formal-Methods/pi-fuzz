@@ -27,8 +27,8 @@ class Fuzzer:
     def fuzz(self):
         population_summary = []
         self.game.env.reset()
-        state_nn, state_env = self.game.get_state()
-        seed = Seed(state_nn, state_env, 0, 0)
+        nn_state, hi_lvl_state = self.game.get_state()
+        seed = Seed(nn_state, hi_lvl_state, 0, 0)
         self.pool.append(seed)
 
         start_time = time.perf_counter()

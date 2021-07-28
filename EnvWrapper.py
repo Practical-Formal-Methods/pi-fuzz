@@ -56,7 +56,7 @@ class Wrapper():
         elif self.env_iden == "linetrack":
             nn_state, hi_lvl_state = self.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
 
-        return nn_state
+        return nn_state, hi_lvl_state
 
     def set_state(self, state_inf):
         hi_lvl_state, v = state_inf
