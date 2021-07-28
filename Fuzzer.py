@@ -27,7 +27,7 @@ class Fuzzer:
     def fuzz(self):
         population_summary = []
         self.game.env.reset()
-        state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+        state_nn, state_env = self.game.get_state()
         seed = Seed(state_nn, state_env, 0, 0)
         self.pool.append(seed)
 
@@ -39,14 +39,14 @@ class Fuzzer:
 
             if not self.fuzz_type == "bbox" and rnd < 0.7:  # for BB if False
                 seed = self.schedule.choose(self.pool)
-                cand_env, cand_nn = self.mutator.mutate(seed, self.rng)
+                cand_nn, cand_hi_lvl = self.mutator.mutate(seed, self.rng)
             else:
                 self.game.env.reset(rng=self.rng)
-                cand_nn, cand_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+                cand_nn, cand_hi_lvl = self.game.get_state()
 
             # time start
             if self.is_interesting(cand_nn):
-                self.pool.append(Seed(cand_nn, cand_env, trial, time.perf_counter()-start_time))
+                self.pool.append(Seed(cand_nn, cand_hi_lvl, trial, time.perf_counter()-start_time))
 
             population_summary.append([trial, time.perf_counter()-start_time, len(self.pool)])
             # time end

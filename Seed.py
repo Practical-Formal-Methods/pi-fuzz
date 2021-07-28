@@ -2,9 +2,9 @@ import copy
 import numpy as np
 
 class Seed(object):
-    def __init__(self, state_nn, state_env, gen_trial, gen_time):
-        self.data = state_nn
-        self.state_env = copy.copy(state_env)
+    def __init__(self, nn_state, hi_lvl_state, gen_trial, gen_time):
+        self.data = nn_state
+        self.hi_lvl_state = copy.copy(hi_lvl_state)
         self.reward = 0
         self.energy = 1
         self.weight = 0

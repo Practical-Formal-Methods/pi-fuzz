@@ -96,14 +96,12 @@ def set_rngs():
     agent_rngs = []
     fuzz_rngs = []
     orcl_rngs = []
-    env_rngs = []
     for i in range(N_FUZZ_RUNS):
         agent_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
-        env_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
         fuzz_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
         orcl_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
 
-    return agent_rngs, env_rngs, fuzz_rngs, orcl_rngs
+    return agent_rngs, fuzz_rngs, orcl_rngs
 
 def setup_logger(name, log_file, level=logging.DEBUG):
     handler = logging.FileHandler(log_file, mode="w")

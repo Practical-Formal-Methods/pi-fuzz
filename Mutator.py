@@ -11,13 +11,13 @@ class RandomActionMutator(Mutator):
 
     def mutate(self, seed, rng):
         nn_state = seed.data
-        self.wrapper.env.set_state(seed.state_env, nn_state[-1])
+        self.wrapper.set_state([seed.hi_lvl_state, nn_state[-1]])
         for _ in range(POOL_POP_MUT):
-            act = rng.choice(self.wrapper.env.action_space, 1)
-            _, nn_state, done = self.wrapper.env.step(act)
+            act = rng.choice(self.wrapper.action_space, 1)
+            _, nn_state, done = self.wrapper.env_step(act)
             if done:
                 return None, None
 
-        nn_state, env_state = self.wrapper.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
+        nn_state, hi_lvl_state = self.wrapper.get_state()
 
-        return env_state, nn_state
+        return nn_state, hi_lvl_state

@@ -38,14 +38,14 @@ class LookAheadOracle(Oracle):
         super().set_deviations()
         self.game.env.reset(rng=self.rng)
         num_warning = 0
-        self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
+        self.game.env.set_state(fuzz_seed)
         agent_reward, _, fp = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
         # if agent does not crash originally, nothing to do in this mode
         if self.mode == "qualitative" and agent_reward > 0:
             return num_warning  # iow 0
 
         for deviation in self.deviations:
-            self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
+            self.game.env.set_state(fuzz_seed)
             dev_reward, _, fp = self.game.run_pol_fuzz(fuzz_seed.data, lahead_seq=deviation, mode=self.mode)
 
             if dev_reward - agent_reward > DELTA:
@@ -63,7 +63,7 @@ class MetamorphicOracle(Oracle):
 
         num_warning_easy = 0
         num_warning_hard = 0
-        self.game.env.set_state(fuzz_seed.state_env, fuzz_seed.data[-1])
+        self.game.set_state([fuzz_seed.state_env, fuzz_seed.data[-1]])
         agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
 
         v = fuzz_seed.data[-1]
@@ -92,8 +92,8 @@ class MetamorphicOracle(Oracle):
                     street[pos[0]][pos[1]] = None
 
                 self.game.env.reset(rng=exp_rng)
-                self.game.env.set_state(street, v)
-                state_nn, state_env = self.game.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+                self.game.set_state([street, v])
+                state_nn, state_env = self.game.get_state()
 
                 mut_reward, _, fp = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 
@@ -111,8 +111,8 @@ class MetamorphicOracle(Oracle):
                     street[pos[0]][pos[1]] = self.game.env.get_new_car(pos[0])
 
                 self.game.env.reset(rng=exp_rng)
-                self.game.env.set_state(street, v)
-                state_nn, _ = self.game.env.get_state(one_hot=True, linearize=True,  window=True, distance=True)
+                self.game.set_state([street, v])
+                state_nn, _ = self.game.get_state()
 
                 mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
 

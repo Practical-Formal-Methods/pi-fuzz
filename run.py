@@ -14,14 +14,14 @@ from fuzz_utils import post_fuzz_analysis, plot_rq3_warn, setup_logger, set_rngs
 from fuzz_config import RANDOM_SEEDS, N_FUZZ_RUNS
 
 
-def test_policy(fuzz_type, agent_paths, bug_type, coverage):
+def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
 
     workbook = xlsxwriter.Workbook('logs/out_%s_%s_dedup_%s.xlsx' % (agent_id, fuzz_start_time, fuzz_type))
     worksheet = workbook.add_worksheet()
     header = ["fuzz_run_id", "bug_type", "coverage", "agent_name", "#easy_warns", "#hard_warns"]
     worksheet.write_row(0, 0, header)
 
-    agent_rngs, env_rngs, fuzz_rngs, orcl_rngs = set_rngs()
+    agent_rngs, fuzz_rngs, orcl_rngs = set_rngs()
 
     rep_line = 0
     resulting_pools = []
@@ -30,8 +30,8 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
     all_tot_warns_mm_h = []
     for r_id in range(N_FUZZ_RUNS):
 
-        game = EW.Wrapper()
-        game.create_linetrack_environment(rng=fuzz_rngs[r_id])
+        game = EW.Wrapper(env_identifier)
+        game.create_environment(RANDOM_SEEDS[r_id])
         mutator = Mutator.RandomActionMutator(game)
         schedule = Scheduler.QueueScheduler()
 
@@ -45,20 +45,19 @@ def test_policy(fuzz_type, agent_paths, bug_type, coverage):
         population_summaries.append(pop_summ)
         resulting_pools.append(fuzzer.pool)
 
-        continue
-
         all_rews = []
         for ap in agent_paths:
-            game.create_linetrack_model(load_path=ap, r_seed=r_id)
+            game.create_model(ap)
             rews = []
             for sd in fuzzer.pool:
-                env_rng = np.random.default_rng(r_id)
-                game.env.reset(rng=env_rng)  # reset the RNG
-                game.env.set_state(sd.state_env, sd.data[-1])
-                rew, _, fp = game.run_pol_fuzz(sd.data, mode="qualitative")  # this is always qualitative
+                game.env.reset(hi_lvl_state=sd.hi_lvl_state)
+                # env_rng = np.random.default_rng(123123)
+                # game.env.reset(rng=env_rng)  # reset the RNG
+                # game.set_state([sd.hi_lvl_state, sd.data[-1]])
+                rew, fp = game.run_pol_fuzz(sd.data, mode="qualitative")  # this is always qualitative
                 rews.append(rew)
             all_rews.append(rews)
-        
+        exit()
         mean_rews = np.mean(np.array(all_rews), axis=0)
 
         fltr_pool = []
@@ -126,10 +125,12 @@ loggername = "fuzz_logger"
 logfilename = "logs/policy_testing_%s.log" % fuzz_start_time
 
 parser = argparse.ArgumentParser()
+parser.add_argument("env_identifier")
 parser.add_argument("agent_name")
 parser.add_argument("fuzz_type")
 args = parser.parse_args()
 
+env_iden = args.env_identifier
 agent_id = args.agent_name
 fuzz_type = args.fuzz_type
 
@@ -150,5 +151,5 @@ for f in listdir("final_policies"):
     if isfile(join("final_policies", f)) and agent_id in f:
         ppaths.append(join("final_policies", f))
 
-population_summaries, pools = test_policy(fuzz_type, ppaths, fuzz_type, coverage)
-plot_rq3_warn(pools)  # plot graph
+population_summaries, pools = test_policy(env_iden ,fuzz_type, ppaths, fuzz_type, coverage)
+# plot_rq3_warn(pools)  # plot graph
