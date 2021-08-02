@@ -1,3 +1,4 @@
+import time
 from abc import ABC
 from fuzz_config import POOL_POP_MUT
 
@@ -10,8 +11,8 @@ class RandomActionMutator(Mutator):
         super().__init__(wrapper)
 
     def mutate(self, seed, rng):
-        nn_state = seed.data
         self.wrapper.set_state(seed.hi_lvl_state)
+
         for _ in range(POOL_POP_MUT):
             act = rng.choice(self.wrapper.action_space, 1)[0]
             _, nn_state, done = self.wrapper.env_step(act)

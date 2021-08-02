@@ -1,3 +1,5 @@
+import time
+
 from mod_gym import gym
 
 from linetrack.dqn.agent import Pseudo_Agent, Agent
@@ -60,7 +62,7 @@ class Wrapper():
 
     def set_state(self, hi_lvl_state, extra=None):
         if self.env_iden == "lunar":
-            self.env.set_state(hi_lvl_state)
+            self.env.reset(hi_lvl_state=hi_lvl_state)
         elif self.env_iden == "linetrack":
             self.env.set_state(hi_lvl_state, extra)
 
@@ -83,13 +85,16 @@ class Wrapper():
 
         return reward, next_state, done
 
-    def run_pol_fuzz(self, init_state, mode="quantitative"):
+    def run_pol_fuzz(self, init_state, mode="quantitative", render=False):
         next_state = init_state
         full_play = []
         total_reward = 0
         while True:
             act = self.model_step(next_state)
             reward, next_state, done = self.env_step(act)
+            if render:
+                self.env.render()
+                time.sleep(0.06)
             total_reward += reward
             full_play.append(act)
             if done:

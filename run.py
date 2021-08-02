@@ -1,3 +1,4 @@
+import copy
 import time
 import argparse
 import xlsxwriter
@@ -10,7 +11,7 @@ import Scheduler
 import EnvWrapper as EW
 import Fuzzer
 import Mutator
-from fuzz_utils import post_fuzz_analysis, plot_rq3_warn, setup_logger, set_rngs, read_outs_excel
+from fuzz_utils import post_fuzz_analysis, plot_rq3_warn, plot_rq3_time, setup_logger, set_rngs, read_outs_excel
 from fuzz_config import RANDOM_SEEDS, N_FUZZ_RUNS
 
 
@@ -29,9 +30,8 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
     all_tot_warns_mm_e = []
     all_tot_warns_mm_h = []
     for r_id in range(N_FUZZ_RUNS):
-
         game = EW.Wrapper(env_identifier)
-        game.create_environment(RANDOM_SEEDS[r_id])
+        game.create_environment(env_seed=RANDOM_SEEDS[r_id])
         mutator = Mutator.RandomActionMutator(game)
         schedule = Scheduler.QueueScheduler()
 
@@ -44,23 +44,25 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
         pop_summ = fuzzer.fuzz()
         population_summaries.append(pop_summ)
         resulting_pools.append(fuzzer.pool)
-        
-        print(len(fuzzer.pool))
+
+        continue
+
+        print("Pool size:", len(fuzzer.pool))
         all_rews = []
         for ap in agent_paths:
             game.create_model(ap)
             rews = []
             for sd in fuzzer.pool:
-                game.env.reset()  # hi_lvl_state=sd.hi_lvl_state)
+                # game.create_environment(env_seed=RANDOM_SEEDS[r_id])
+                # game.env.reset() #hi_lvl_state=sd.hi_lvl_state)
                 game.set_state(sd.hi_lvl_state)
                 # env_rng = np.random.default_rng(123123)
                 # game.env.reset(rng=env_rng)  # reset the RNG
                 # game.set_state([sd.hi_lvl_state, sd.data[-1]])
-                rew, fp = game.run_pol_fuzz(sd.data, mode="qualitative")  # this is always qualitative
+                rew, fp = game.run_pol_fuzz(sd.data, mode="qualitative", render=True)  # this is always qualitative
                 rews.append(rew)
             all_rews.append(rews)
-        print(all_rews)
-        exit()
+
         mean_rews = np.mean(np.array(all_rews), axis=0)
 
         fltr_pool = []
@@ -154,5 +156,44 @@ for f in listdir("final_policies"):
     if isfile(join("final_policies", f)) and agent_id in f:
         ppaths.append(join("final_policies", f))
 
-population_summaries, pools = test_policy(env_iden ,fuzz_type, ppaths, fuzz_type, coverage)
+population_summaries_gb, pools_gb = test_policy(env_iden, "gbox", ppaths, bug_type, coverage)
+population_summaries_bb, pools_bb = test_policy(env_iden, "bbox", ppaths, bug_type, coverage)
+
+plot_rq3_time(population_summaries_gb, population_summaries_bb)
 # plot_rq3_warn(pools)  # plot graph
+
+
+
+
+
+#
+# obs = game.env.reset()
+# acts = []
+# for i in range(120):
+#     action = agent_rngs[0].choice(range(game.env.action_space.n), 1)[0]
+#     game.env.render()
+#     time.sleep(0.1)
+#     _, s = game.get_state()
+#     if i == 30:
+#         ss = s  #copy.deepcopy(s)
+#         time.sleep(3)
+#     if i >= 30 and i < 35:
+#         print(action, s)
+#         acts.append(action)
+#     obs, rewards, dones, info = game.env.step(action)
+#
+# print("here")
+# game.set_state(hi_lvl_state=ss)
+# for i in range(5):
+#     # action = agent_rngs[0].choice(range(game.env.action_space.n), 1)[0]
+#     action = acts[i]
+#     game.env.render()
+#     _, s = game.get_state()
+#     print(action, s)
+#     obs, rewards, dones, info = game.env.step(action)
+#
+#     if i == 0:
+#         time.sleep(3)
+#     else:
+#         time.sleep(0.1)
+# exit()
