@@ -85,20 +85,35 @@ class LunarOracleMoonMutator(Mutator):
         _, _, _, _, _, _, _, _, height = hi_lvl_state
         mut_height = []
         if mode == "hard":
-            for i, hght in enumerate(height):
+            for i in range(len(height)):
+                if i+1 == len(height):
+                    sp = 0
+                else:
+                    sp = i+1
                 m_h = height[i]
-                if height[i] > height[i-1] and height[i] > height[i+1]:
+                if height[i] > height[i-1] and height[i] > height[sp]:
                     m_h = rng.uniform(height[i], H/2)
-                if height[i] < height[i-1] and height[i] < height[i+1]:
-                    m_h = rng.uniform(height[i], 0)
+                if height[i] < height[i-1] and height[i] < height[sp]:
+                    m_h = rng.uniform(0, height[i])
                 mut_height.append(m_h)
         else:
-            for i, hght in enumerate(height):
+            for i in range(len(height)):
+                if i+1 == len(height):
+                    sp = 0
+                else:
+                    sp = i+1
                 m_h = height[i]
-                if height[i] > height[i-1] and height[i] > height[i+1]:
-                    m_h = rng.uniform(height[i-1], height[i+1])
-                if height[i] < height[i-1] and height[i] < height[i+1]:
-                    m_h = rng.uniform(height[i-1], height[i+1])
+                if height[i] > height[i-1] and height[i] > height[sp]:
+                    if height[i-1] < height[sp]:
+                        m_h = rng.uniform(height[i-1], height[sp])
+                    else:
+                        m_h = rng.uniform(height[sp], height[i-1])
+                if height[i] < height[i-1] and height[i] < height[sp]:
+                    if height[i-1] < height[sp]:
+                        m_h = rng.uniform(height[i-1], height[sp])
+                    else:
+                        m_h = rng.uniform(height[sp], height[i-1])
+
                 mut_height.append(m_h)
 
         hi_lvl_state[-1] = mut_height
