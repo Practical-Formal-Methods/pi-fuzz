@@ -22,7 +22,7 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
     header = ["fuzz_run_id", "bug_type", "coverage", "agent_name", "#easy_warns", "#hard_warns"]
     worksheet.write_row(0, 0, header)
 
-    agent_rngs, fuzz_rngs, orcl_rngs = set_rngs()
+    # fuzz_rngs, orcl_rngs = set_rngs()
 
     rep_line = 0
     resulting_pools = []
@@ -40,12 +40,11 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
         logger.info("Fuzzer started. Fuzz run: %d" % r_id)
         logger.info("=" * 30)
 
-        fuzzer = Fuzzer.Fuzzer(rng=fuzz_rngs[r_id], fuzz_type=fuzz_type, fuzz_game=game, schedule=schedule, mutator=mutator, coverage=coverage)
+        fuzz_rng = np.random.default_rng(r_id)
+        fuzzer = Fuzzer.Fuzzer(rng=fuzz_rng, fuzz_type=fuzz_type, fuzz_game=game, schedule=schedule, mutator=mutator, coverage=coverage)
         pop_summ = fuzzer.fuzz()
         population_summaries.append(pop_summ)
         resulting_pools.append(fuzzer.pool)
-
-        continue
 
         print("Pool size:", len(fuzzer.pool))
         all_rews = []
@@ -53,13 +52,8 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
             game.create_model(ap)
             rews = []
             for sd in fuzzer.pool:
-                # game.create_environment(env_seed=RANDOM_SEEDS[r_id])
-                # game.env.reset() #hi_lvl_state=sd.hi_lvl_state)
                 game.set_state(sd.hi_lvl_state)
-                # env_rng = np.random.default_rng(123123)
-                # game.env.reset(rng=env_rng)  # reset the RNG
-                # game.set_state([sd.hi_lvl_state, sd.data[-1]])
-                rew, fp = game.run_pol_fuzz(sd.data, mode="qualitative", render=True)  # this is always qualitative
+                rew, fp = game.run_pol_fuzz(sd.data, mode="qualitative", render=False)  # this is always qualitative
                 rews.append(rew)
             all_rews.append(rews)
 
@@ -78,16 +72,14 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
             logger.info("\n\n")
             logger.info(" *********** Policy %s is being tested.  ***********" % pname)
 
-            orcl_rng = np.random.default_rng(r_id)  # orcl_rngs[r_id]
+            orcl_rng = np.random.default_rng(r_id)
             mm_oracle = Oracle.MetamorphicOracle(game, mode=bug_type, rng=orcl_rng, de_dup=True)
 
-            game.create_linetrack_model(load_path=ap, r_seed=r_id)
+            # game.create_linetrack_model(load_path=ap, r_seed=r_id)
 
             warnings_mm_e = []
             warnings_mm_h = []
             for idx, fuzz_seed in enumerate(fltr_pool):
-                env_rng = np.random.default_rng(123123)
-                game.env.reset(rng=env_rng)   # s[r_id])
 
                 num_warn_mm_e, num_warn_mm_h = mm_oracle.explore(fuzz_seed)
                 num_warn_mm_tot = num_warn_mm_e + num_warn_mm_h
@@ -182,6 +174,7 @@ plot_rq3_time(population_summaries_gb, population_summaries_bb)
 #         acts.append(action)
 #     obs, rewards, dones, info = game.env.step(action)
 #
+# game.create_environment(env_seed=RANDOM_SEEDS[r_id])
 # print("here")
 # game.set_state(hi_lvl_state=ss)
 # for i in range(5):

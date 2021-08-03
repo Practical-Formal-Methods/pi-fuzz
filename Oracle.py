@@ -2,6 +2,8 @@ import copy
 import logging
 import itertools
 import numpy as np
+
+import Mutator
 from fuzz_config import DEVIATION_DEPTH, SEARCH_BUDGET, MM_MUT_MAGNITUDE, DELTA
 from abc import ABC, abstractmethod
 
@@ -57,72 +59,58 @@ class LookAheadOracle(Oracle):
 class MetamorphicOracle(Oracle):
     def __init__(self, game, mode, rng, de_dup=False):
         super().__init__(game, mode, rng, de_dup)
+        if game.env_iden == "linetrack":
+            self.mutator = Mutator.LinetrackOracleMutator(game)
+        else:
+            self.mutator = Mutator.LunarOracleMutator(game)
 
     def explore(self, fuzz_seed):
-        # self.game.env.reset(rng=self.rng)  # env resetted in run.py before calling explore
 
+        # env_rng = np.random.default_rng(123123)
+        # game.env.reset(rng=env_rng)   # s[r_id])
+        self.game.env.seed(123123)
         num_warning_easy = 0
         num_warning_hard = 0
-        self.game.set_state([fuzz_seed.state_env, fuzz_seed.data[-1]])
-        agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
+        self.game.set_state(fuzz_seed.hi_lvl_state)  # [fuzz_seed.state_env, fuzz_seed.data[-1]])
+        agent_reward, _ = self.game.run_pol_fuzz(fuzz_seed.data, mode=self.mode)
 
-        v = fuzz_seed.data[-1]
-
-        car_positions = []
-        free_positions = []
-        for lane_id, lane in enumerate(fuzz_seed.state_env):
-            for spot_id, spot in enumerate(lane):
-                if (spot is not None) and (str(spot) != "A"):
-                    car_positions.append((lane_id, spot_id))
-                if spot is None:
-                    free_positions.append((lane_id, spot_id))
+        # v = fuzz_seed.data[-1]
 
         bug_states = []
         for idx in range(SEARCH_BUDGET):
-            street = copy.deepcopy(fuzz_seed.state_env)
-            exp_rng = np.random.default_rng(123123)
-
+            # exp_rng = np.random.default_r ng(123123)
             # make map EASIER
             if idx % 2 == 0:
-                mut_ind = self.rng.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
-                mut_positions = np.array(car_positions)[mut_ind]
+                mut_state = self.mutator.mutate(fuzz_seed, mode='easy')
+                # self.game.env.reset(rng=exp_rng)
+                self.game.env.seed(123123)
+                self.game.set_state(mut_state)  # [street, v])
+                nn_state, _ = self.game.get_state()
 
-                # remove cars
-                for pos in mut_positions:
-                    street[pos[0]][pos[1]] = None
+                mut_reward, _ = self.game.run_pol_fuzz(nn_state, mode=self.mode)
 
-                self.game.env.reset(rng=exp_rng)
-                self.game.set_state([street, v])
-                state_nn, state_env = self.game.get_state()
-
-                mut_reward, _, fp = self.game.run_pol_fuzz(state_nn, mode=self.mode)
-
-                if self.de_dup and list(state_nn) in bug_states: continue
+                if self.de_dup and list(nn_state) in bug_states: continue
                 if agent_reward - mut_reward > DELTA:
                     num_warning_easy += 1
-                    bug_states.append(list(state_nn))
+                    bug_states.append(list(nn_state))
 
             # make map HARDER
             else:
-                mut_ind = self.rng.choice(len(free_positions), MM_MUT_MAGNITUDE, replace=False)
-                mut_positions = np.array(free_positions)[mut_ind]
+                mut_state = self.mutator.mutate(fuzz_seed, mode='hard')
+                # self.game.env.reset(rng=exp_rng)
+                self.game.env.seed(123123)
+                self.game.set_state(mut_state)  # [street, v])
+                nn_state, _ = self.game.get_state()
 
-                for pos in mut_positions:
-                    street[pos[0]][pos[1]] = self.game.env.get_new_car(pos[0])
+                mut_reward, _ = self.game.run_pol_fuzz(nn_state, mode=self.mode)
 
-                self.game.env.reset(rng=exp_rng)
-                self.game.set_state([street, v])
-                state_nn, _ = self.game.get_state()
-
-                mut_reward, _, _ = self.game.run_pol_fuzz(state_nn, mode=self.mode)
-
-                if self.de_dup and list(state_nn) in bug_states: continue
+                if self.de_dup and list(nn_state) in bug_states: continue
                 if mut_reward - agent_reward > DELTA:
                     num_warning_hard = 1
-                    bug_states.append(list(state_nn))
-
+                    bug_states.append(list(nn_state))
 
         return num_warning_easy, num_warning_hard
+
 
 class OptimalOracle(Oracle):
     def explore(self, seed):

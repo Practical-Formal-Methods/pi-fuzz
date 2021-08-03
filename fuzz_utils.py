@@ -101,7 +101,7 @@ def set_rngs():
         fuzz_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
         orcl_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
 
-    return agent_rngs, fuzz_rngs, orcl_rngs
+    return fuzz_rngs, orcl_rngs
 
 def setup_logger(name, log_file, level=logging.DEBUG):
     handler = logging.FileHandler(log_file, mode="w")
