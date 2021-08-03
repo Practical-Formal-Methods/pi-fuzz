@@ -55,18 +55,52 @@ class LinetrackOracleMutator(Mutator):
         return street
 
 
-class LunarOracleMutator(Mutator):
+class LunarOracleVelMutator(Mutator):
     def __init__(self, wrapper):
         super().__init__(wrapper)
 
-    def mutate(self, seed, mode="easy"):
+    def mutate(self, seed, rng, mode="easy"):
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
-        _, lander_vel, _, _, _, _, _, _, _, _ = hi_lvl_state
+        _, lander_vel, _, _, _, _, _, _, _ = hi_lvl_state
+        diff = rng.random()
         if mode == "easy":
-            mut_lander_vel = (lander_vel[0], 0.7 * lander_vel[1])
+            mut_lander_vel = (lander_vel[0], (1-diff) * lander_vel[1])
         else:
-            mut_lander_vel = (lander_vel[0], 1.3 * lander_vel[1])
+            mut_lander_vel = (lander_vel[0], (1+diff)  * lander_vel[1])
 
         hi_lvl_state[1] = mut_lander_vel
+
+        return hi_lvl_state
+
+class LunarOracleMoonMutator(Mutator):
+    def __init__(self, wrapper):
+        super().__init__(wrapper)
+
+    def mutate(self, seed, rng, mode="easy"):
+        SCALE = 30.0
+        VIEWPORT_H = 400
+        H = VIEWPORT_H/SCALE
+
+        hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
+        _, _, _, _, _, _, _, _, height = hi_lvl_state
+        mut_height = []
+        if mode == "hard":
+            for i, hght in enumerate(height):
+                m_h = height[i]
+                if height[i] > height[i-1] and height[i] > height[i+1]:
+                    m_h = rng.uniform(height[i], H/2)
+                if height[i] < height[i-1] and height[i] < height[i+1]:
+                    m_h = rng.uniform(height[i], 0)
+                mut_height.append(m_h)
+        else:
+            for i, hght in enumerate(height):
+                m_h = height[i]
+                if height[i] > height[i-1] and height[i] > height[i+1]:
+                    m_h = rng.uniform(height[i-1], height[i+1])
+                if height[i] < height[i-1] and height[i] < height[i+1]:
+                    m_h = rng.uniform(height[i-1], height[i+1])
+                mut_height.append(m_h)
+
+        hi_lvl_state[-1] = mut_height
 
         return hi_lvl_state

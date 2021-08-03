@@ -62,7 +62,7 @@ class MetamorphicOracle(Oracle):
         if game.env_iden == "linetrack":
             self.mutator = Mutator.LinetrackOracleMutator(game)
         else:
-            self.mutator = Mutator.LunarOracleMutator(game)
+            self.mutator = Mutator.LunarOracleMoonMutator(game)
 
     def explore(self, fuzz_seed):
 
@@ -81,7 +81,7 @@ class MetamorphicOracle(Oracle):
             # exp_rng = np.random.default_r ng(123123)
             # make map EASIER
             if idx % 2 == 0:
-                mut_state = self.mutator.mutate(fuzz_seed, mode='easy')
+                mut_state = self.mutator.mutate(fuzz_seed, self.rng, mode='easy')
                 # self.game.env.reset(rng=exp_rng)
                 self.game.env.seed(123123)
                 self.game.set_state(mut_state)  # [street, v])
@@ -96,7 +96,7 @@ class MetamorphicOracle(Oracle):
 
             # make map HARDER
             else:
-                mut_state = self.mutator.mutate(fuzz_seed, mode='hard')
+                mut_state = self.mutator.mutate(fuzz_seed, self.rng, mode='hard')
                 # self.game.env.reset(rng=exp_rng)
                 self.game.env.seed(123123)
                 self.game.set_state(mut_state)  # [street, v])
