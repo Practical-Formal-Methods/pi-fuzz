@@ -63,28 +63,29 @@ os.makedirs(log_dir, exist_ok=True)
 # Create environment
 env = gym.make('LunarLander-v2')
 env = Monitor(env, log_dir)
-env.seed(0)
-# Instantiate the agent
-model = DQN('MlpPolicy', env, verbose=1)
+env.seed(3)
 
-time_steps = int(1e6)
-# Train the agent
-callback = SaveOnBestTrainingRewardCallback(check_freq=50000, log_dir=log_dir)
-model.learn(total_timesteps=time_steps, callback=callback)
+if False:
+    # Instantiate the agent
+    model = DQN('MlpPolicy', env, verbose=1)    
 
-results_plotter.plot_results([log_dir], time_steps, results_plotter.X_TIMESTEPS, "DQN LunarLander")
-plt.savefig("tmp/LunarDQNTraining%d.pdf" % time_steps)
+    time_steps = int(1e6)
+    # Train the agent
+    callback = SaveOnBestTrainingRewardCallback(check_freq=50000, log_dir=log_dir)
+    model.learn(total_timesteps=time_steps, callback=callback)
 
-exit()
-# Load the trained agent
-model = DQN.load("final_policies/dqn_lunar_5e5", env=env)
+    results_plotter.plot_results([log_dir], time_steps, results_plotter.X_TIMESTEPS, "DQN LunarLander")
+    plt.savefig("tmp/LunarDQNTraining%d.pdf" % time_steps)
+else:
+    # Load the trained agent
+    model = DQN.load("tmp/best_model_500000", env=env)
 
-# Evaluate the agent
-# NOTE: If you use wrappers with your environment that modify rewards,
-#       this will be reflected here. To evaluate with original rewards,
-#       wrap environment in a "Monitor" wrapper before other wrappers.
-mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=30)
-print(mean_reward, std_reward)
+    # Evaluate the agent
+    # NOTE: If you use wrappers with your environment that modify rewards,
+    #       this will be reflected here. To evaluate with original rewards,
+    #       wrap environment in a "Monitor" wrapper before other wrappers.
+    mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=30)
+    print(mean_reward, std_reward)
 
 exit()
 
