@@ -4,7 +4,8 @@ from mod_gym import gym
 
 from linetrack.dqn.agent import Pseudo_Agent, Agent
 from linetrack.model.model import Linetrack
-from mod_stable_baselines3.stable_baselines3 import DQN
+from mod_stable_baselines3.stable_baselines3 import DQN, PPO
+
 
 class Wrapper():
     def __init__(self, env_identifier):
@@ -12,6 +13,19 @@ class Wrapper():
         self.env = None
         self.initial_state = None
         self.model = None
+
+    def create_bipedal_environment(self, seed, hardcore=False):
+        if hardcore:
+            env = gym.make('BipedalWalkerHardcore-v3')
+        else:
+            env = gym.make('BipedalWalker-v3')
+        env.seed(seed)
+        self.env = env
+        # self.action_space = range(env.action_space.n)  # Discrete(4)
+
+    def create_bipedal_model(self, load_path):
+        model = PPO.load(load_path, env=self.env)
+        self.model = model
 
     def create_lunar_model(self, load_path):
         model = DQN.load(load_path, env=self.env)
@@ -41,19 +55,25 @@ class Wrapper():
     def create_environment(self, rng=None, env_seed=None):
         if self.env_iden == "lunar":
             self.create_lunar_environment(env_seed)
+        elif self.env_iden == "bipedal":
+            self.create_bipedal_environment(env_seed)
+        elif self.env_iden == "bipedal-hc":
+            self.create_bipedal_environment(env_seed, hardcore=True)
         elif self.env_iden == "linetrack":
             self.create_linetrack_environment(rng)
 
     def create_model(self, load_path, r_seed=None):
         if self.env_iden == "lunar":
             self.create_lunar_model(load_path)
+        elif self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
+            self.create_bipedal_model(load_path)
         elif self.env_iden == "linetrack":
             self.create_linetrack_model(load_path, r_seed)
 
     def get_state(self):
         nn_state, hi_lvl_state = None, None
 
-        if self.env_iden == "lunar":
+        if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             nn_state, hi_lvl_state = self.env.get_state()
         elif self.env_iden == "linetrack":
             nn_state, hi_lvl_state = self.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
@@ -61,7 +81,7 @@ class Wrapper():
         return nn_state, hi_lvl_state
 
     def set_state(self, hi_lvl_state, extra=None):
-        if self.env_iden == "lunar":
+        if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             self.env.reset(hi_lvl_state=hi_lvl_state)
         elif self.env_iden == "linetrack":
             self.env.set_state(hi_lvl_state, extra)
@@ -69,7 +89,7 @@ class Wrapper():
 
     def model_step(self, state):
         act = None
-        if self.env_iden == "lunar":
+        if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             act, _ = self.model.predict(state, deterministic=True)
         elif self.env_iden == "linetrack":
             act = self.model.act(state)
@@ -78,7 +98,7 @@ class Wrapper():
 
     def env_step(self, action):
         reward, next_state, done = None, None, None
-        if self.env_iden == "lunar":
+        if self.env_iden == "lunar" or self.env_iden == "bipedal"  or self.env_iden == "bipedal-hc":
             next_state, reward, done, info = self.env.step(action)
         elif self.env_iden == "linetrack":
             next_state, reward, done = self.env.step(action)
@@ -89,17 +109,25 @@ class Wrapper():
         next_state = init_state
         full_play = []
         total_reward = 0
+        all_rews = []
         while True:
             act = self.model_step(next_state)
             reward, next_state, done = self.env_step(act)
             if render:
                 self.env.render()
-                time.sleep(0.06)
+                time.sleep(0.02)
+
             total_reward += reward
+            all_rews.append(reward)
+
             full_play.append(act)
             if done:
                 if mode == "qualitative":
-                    total_reward = int(total_reward > 0) * 100  # if no crash 100 else 0
+                    if -100 in all_rews:
+                        total_reward = 0 # walker fell before reaching end
+                    else:
+                        total_reward = 100  # walker reached end
+                    # total_reward = int(total_reward > 0) * 100  # if no crash 100 else 0
                 return total_reward, full_play
 
     # @profile

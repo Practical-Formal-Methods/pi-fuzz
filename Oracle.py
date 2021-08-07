@@ -61,13 +61,13 @@ class MetamorphicOracle(Oracle):
         super().__init__(game, mode, rng, de_dup)
         if game.env_iden == "linetrack":
             self.mutator = Mutator.LinetrackOracleMutator(game)
-        else:
+        elif game.env_iden == "lunar":
             self.mutator = Mutator.LunarOracleMoonMutator(game)
+        elif game.env_iden == "bipedal":
+            self.mutator = Mutator.BipedalEasyOracleStumpMutator(game)
 
     def explore(self, fuzz_seed):
 
-        # env_rng = np.random.default_rng(123123)
-        # game.env.reset(rng=env_rng)   # s[r_id])
         self.game.env.seed(123123)
         num_warning_easy = 0
         num_warning_hard = 0
@@ -78,12 +78,10 @@ class MetamorphicOracle(Oracle):
 
         bug_states = []
         for idx in range(SEARCH_BUDGET):
-            # exp_rng = np.random.default_r ng(123123)
+            self.game.env.seed(123123)
             # make map EASIER
             if idx % 2 == 0:
                 mut_state = self.mutator.mutate(fuzz_seed, self.rng, mode='easy')
-                # self.game.env.reset(rng=exp_rng)
-                self.game.env.seed(123123)
                 self.game.set_state(mut_state)  # [street, v])
                 nn_state, _ = self.game.get_state()
 
@@ -97,8 +95,6 @@ class MetamorphicOracle(Oracle):
             # make map HARDER
             else:
                 mut_state = self.mutator.mutate(fuzz_seed, self.rng, mode='hard')
-                # self.game.env.reset(rng=exp_rng)
-                self.game.env.seed(123123)
                 self.game.set_state(mut_state)  # [street, v])
                 nn_state, _ = self.game.get_state()
 
