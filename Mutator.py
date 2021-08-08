@@ -8,6 +8,24 @@ class Mutator(ABC):
     def __init__(self, wrapper):
         self.wrapper = wrapper
 
+class SeedPolicyMutator(Mutator):
+    def __init__(self, wrapper):
+        super().__init__(wrapper)
+
+    def mutate(self, seed_policy, seed, rng):
+        mut_magnitude = rng.integers(POOL_POP_MUT)
+
+        self.wrapper.set_state(seed.hi_lvl_state)
+        nn_state, hi_lvl_state = self.wrapper.get_state()
+
+        next_state = nn_state
+        for _ in range(mut_magnitude):
+            act, _ = seed_policy.predict(next_state, deterministic=True)
+            reward, next_state, done = self.wrapper.env_step(act)
+
+        nn_state, hi_lvl_state = self.wrapper.get_state()
+        return nn_state, hi_lvl_state
+
 class RandomActionMutator(Mutator):
     def __init__(self, wrapper):
         super().__init__(wrapper)

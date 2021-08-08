@@ -13,6 +13,16 @@ class Wrapper():
         self.env = None
         self.initial_state = None
         self.model = None
+        self.seed_policy = None
+
+    def create_seed_policy(self, load_path):
+        model = None
+        if self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
+            model = PPO.load(load_path, env=self.env)
+        elif self.env_iden == "lunar":
+            model = DQN.load(load_path, env=self.env)
+
+        self.seed_policy = model
 
     def create_bipedal_environment(self, seed, hardcore=False):
         if hardcore:

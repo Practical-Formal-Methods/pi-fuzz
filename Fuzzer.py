@@ -2,26 +2,29 @@ import time
 import torch
 import logging
 import numpy as np
+
+import Mutator
+import Scheduler
 from Seed import Seed
 from fuzz_config import POOL_BUDGET, COV_DIST_THOLD
 
 logger = logging.getLogger('fuzz_logger')
 
 class Fuzzer:
-    def __init__(self, rng, fuzz_type, fuzz_game, schedule, mutator, coverage):
+    def __init__(self, rng, fuzz_type, fuzz_game, coverage):
 
         self.rng = rng
         self.fuzz_type = fuzz_type
-        self.schedule = schedule
-        self.mutator = mutator
         self.game = fuzz_game
-        # self.la_oracle = la_oracle
-        # self.mm_oracle = mm_oracle
         self.cov_type = coverage
 
         self.pool = []
         self.epochs = 0
         self.warning_cnt = 0
+
+        self.random_action_mutator = Mutator.RandomActionMutator(self.game)
+        self.seed_policy_mutator = Mutator.SeedPolicyMutator(self.game)
+        self.schedule = Scheduler.QueueScheduler()
 
     # @profile
     def fuzz(self):
@@ -37,9 +40,18 @@ class Fuzzer:
             trial += 1
             rnd = self.rng.random()
 
-            if not self.fuzz_type == "bbox" and rnd < 0.7:  # for BB if False
-                seed = self.schedule.choose(self.pool)
-                cand_nn, cand_hi_lvl = self.mutator.mutate(seed, self.rng)
+            if rnd < 0.8:
+                if self.fuzz_type == "gbox":
+                    seed = self.schedule.choose(self.pool)
+                else:  # bbox
+                    self.game.env.reset()  # rng=self.rng)
+                    cand_nn, cand_hi_lvl = self.game.get_state()
+                    seed = Seed(cand_nn, cand_hi_lvl, trial, time.perf_counter()-start_time)
+
+                if rnd < 0.4:
+                    cand_nn, cand_hi_lvl = self.seed_policy_mutator.mutate(self.game.seed_policy, seed, self.rng)
+                else:  # iow ->  rnd >= 0.4 and rnd < 0.8:
+                    cand_nn, cand_hi_lvl = self.random_action_mutator.mutate(seed, self.rng)
             else:
                 self.game.env.reset()  # rng=self.rng)
                 cand_nn, cand_hi_lvl = self.game.get_state()

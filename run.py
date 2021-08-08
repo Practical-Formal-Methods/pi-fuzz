@@ -15,7 +15,7 @@ from fuzz_utils import post_fuzz_analysis, plot_rq3_warn, plot_rq3_time, setup_l
 from fuzz_config import RANDOM_SEEDS, N_FUZZ_RUNS
 
 
-def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
+def test_policy(env_identifier, fuzz_type, agent_paths, sp_path, bug_type, coverage):
 
     workbook = xlsxwriter.Workbook('logs/out_%s_%s_dedup_%s.xlsx' % (agent_id, fuzz_start_time, fuzz_type))
     worksheet = workbook.add_worksheet()
@@ -32,8 +32,7 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
     for r_id in range(N_FUZZ_RUNS):
         game = EW.Wrapper(env_identifier)
         game.create_environment(env_seed=RANDOM_SEEDS[r_id])
-        mutator = Mutator.RandomActionMutator(game)
-        schedule = Scheduler.QueueScheduler()
+        game.create_seed_policy(sp_path)
 
         logger.info("\n\n")
         logger.info("=" * 30)
@@ -41,7 +40,7 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
         logger.info("=" * 30)
 
         fuzz_rng = np.random.default_rng(r_id)
-        fuzzer = Fuzzer.Fuzzer(rng=fuzz_rng, fuzz_type=fuzz_type, fuzz_game=game, schedule=schedule, mutator=mutator, coverage=coverage)
+        fuzzer = Fuzzer.Fuzzer(rng=fuzz_rng, fuzz_type=fuzz_type, fuzz_game=game, coverage=coverage)
         pop_summ = fuzzer.fuzz()
         population_summaries.append(pop_summ)
         resulting_pools.append(fuzzer.pool)
@@ -80,7 +79,6 @@ def test_policy(env_identifier, fuzz_type, agent_paths, bug_type, coverage):
             warnings_mm_e = []
             warnings_mm_h = []
             for idx, fuzz_seed in enumerate(fltr_pool):
-
                 num_warn_mm_e, num_warn_mm_h = mm_oracle.explore(fuzz_seed)
                 num_warn_mm_tot = num_warn_mm_e + num_warn_mm_h
 
@@ -124,6 +122,7 @@ logfilename = "logs/policy_testing_%s.log" % fuzz_start_time
 parser = argparse.ArgumentParser()
 parser.add_argument("env_identifier")
 parser.add_argument("agent_name")
+parser.add_argument("seed_policy_name")
 parser.add_argument("fuzz_type")
 args = parser.parse_args()
 
@@ -148,10 +147,12 @@ for f in listdir("final_policies"):
     if isfile(join("final_policies", f)) and agent_id in f:
         ppaths.append(join("final_policies", f))
 
-population_summaries_gb, pools_gb = test_policy(env_iden, "gbox", ppaths, bug_type, coverage)
-population_summaries_bb, pools_bb = test_policy(env_iden, "bbox", ppaths, bug_type, coverage)
+sp_path = "final_policies/%s" % args.seed_policy_name
 
-plot_rq3_time(population_summaries_gb, population_summaries_bb)
+population_summaries_gb, pools_gb = test_policy(env_iden, "gbox", ppaths, sp_path, bug_type, coverage)
+# population_summaries_bb, pools_bb = test_policy(env_iden, "bbox", ppaths, bug_type, coverage)
+
+# plot_rq3_time(population_summaries_gb, population_summaries_bb)
 # plot_rq3_warn(pools)  # plot graph
 
 
@@ -190,3 +191,42 @@ plot_rq3_time(population_summaries_gb, population_summaries_bb)
 #     else:
 #         time.sleep(0.1)
 # exit()
+
+    #
+    # obsv_dim, action_dim, continuous_action_space = get_env_space()
+    # actor = Actor(obsv_dim,
+    #               action_dim,
+    #               continuous_action_space=continuous_action_space,
+    #               trainable_std_dev=hp.trainable_std_dev,
+    #               init_log_std_dev=hp.init_log_std_dev)
+    # critic = Critic(obsv_dim)
+    #
+    # actor_state_dict, critic_state_dict, actor_optimizer_state_dict, critic_optimizer_state_dict, _ = load_checkpoint(60)
+    #
+    # actor.load_state_dict(actor_state_dict, strict=True)
+    # critic.load_state_dict(critic_state_dict, strict=True)
+    #
+    # # game.create_model("actor.pth")  # final_policies/bipedal_easy_900K")  # final_policies/ppo_bipedal_400000")
+    # obs = game.env.reset()
+    # print(obs.dtype)
+    # obs = list(obs)
+    # print(obs)
+    # import torch
+    # tens = torch.DoubleTensor(obs)
+    # print(tens.dtype)
+    # exit()
+    # tens = torch.from_numpy(np.expand_dims(np.expand_dims(obs, axis=0), axis=0))
+    # # tens = torch.from_numpy(obs)
+    # print(tens.dtype)
+    # tens.double()
+    # actor.forward(tens.double())
+    # exit()
+    # print(tens)
+    # tens = tens.type(torch.DoubleTensor)
+    # print(tens)
+    # tens.to(torch.long)
+    # print(tens)
+    # exit()
+    # rew, fp = game.run_pol_fuzz(obs, mode="quantitative", render=True)  # this is always qualitative
+    # print(rew)
+    # exit()
