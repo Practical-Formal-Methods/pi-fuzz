@@ -13,15 +13,17 @@ class SeedPolicyMutator(Mutator):
         super().__init__(wrapper)
 
     def mutate(self, seed_policy, seed, rng):
-        mut_magnitude = rng.integers(POOL_POP_MUT)
+        # mut_magnitude = rng.integers(POOL_POP_MUT)
 
         self.wrapper.set_state(seed.hi_lvl_state)
         nn_state, hi_lvl_state = self.wrapper.get_state()
 
         next_state = nn_state
-        for _ in range(mut_magnitude):
+        for _ in range(POOL_POP_MUT):
             act, _ = seed_policy.predict(next_state, deterministic=True)
-            reward, next_state, done = self.wrapper.env_step(act)
+            _, next_state, done = self.wrapper.env_step(act)
+            if done:
+                return None, None
 
         nn_state, hi_lvl_state = self.wrapper.get_state()
         return nn_state, hi_lvl_state
@@ -34,8 +36,8 @@ class RandomActionMutator(Mutator):
         self.wrapper.set_state(seed.hi_lvl_state)
 
         for _ in range(POOL_POP_MUT):
-            # act = rng.choice(self.wrapper.action_space, 1)[0]
-            act = rng.uniform(-1, 1, (4))
+            act = rng.choice(self.wrapper.action_space, 1)[0]
+            # act = rng.uniform(-1, 1, (4))
             _, nn_state, done = self.wrapper.env_step(act)
             if done:
                 return None, None
@@ -127,7 +129,7 @@ class BipedalHCOracleStumpMutator(Mutator):
 
         return hi_lvl_state
 
-class BipedalEasyOracleStumpMutator(Mutator):
+class BipedalEasyOracleMutator(Mutator):
     def __init__(self, wrapper):
         super().__init__(wrapper)
 
@@ -160,6 +162,41 @@ class BipedalEasyOracleStumpMutator(Mutator):
         hi_lvl_state[-5] = mut_terrain_y
 
         return hi_lvl_state
+
+class LunarOracleMoonHeightMutator(Mutator):
+    def __init__(self, wrapper):
+        super().__init__(wrapper)
+
+    def mutate(self, seed, rng, mode="easy"):
+        SCALE = 30.0
+        VIEWPORT_H = 400
+        H = VIEWPORT_H/SCALE
+        ORG_HELIPAD_H = H/4
+        MARGIN = H/6
+        CHUNKS = 11
+
+        hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
+        lander_pos, _, _, _, _, _, _, _, height = hi_lvl_state
+        _, lander_height = lander_pos
+
+        mut_height = copy.deepcopy(height)
+        if mode == "hard":
+            if lander_height-MARGIN < ORG_HELIPAD_H:
+                return None
+            mut_helipad_height = rng.uniform(ORG_HELIPAD_H, lander_height-MARGIN)
+        else:
+            mut_helipad_height = rng.uniform(H/12, ORG_HELIPAD_H)
+
+        mut_height[CHUNKS//2-2] = mut_helipad_height
+        mut_height[CHUNKS//2-1] = mut_helipad_height
+        mut_height[CHUNKS//2+0] = mut_helipad_height
+        mut_height[CHUNKS//2+1] = mut_helipad_height
+        mut_height[CHUNKS//2+2] = mut_helipad_height
+
+        hi_lvl_state[-1] = mut_height
+
+        return hi_lvl_state
+
 
 class LunarOracleVelMutator(Mutator):
     def __init__(self, wrapper):

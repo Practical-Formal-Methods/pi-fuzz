@@ -125,7 +125,11 @@ class Wrapper():
             reward, next_state, done = self.env_step(act)
             if render:
                 self.env.render()
-                time.sleep(0.02)
+
+                if len(all_rews) < 5:
+                    time.sleep(3)
+                else:
+                    time.sleep(0.01)
 
             total_reward += reward
             all_rews.append(reward)
