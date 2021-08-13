@@ -1,26 +1,25 @@
-import time
 import copy
 import numpy as np
 from abc import ABC
-from fuzz_config import POOL_POP_MUT, MM_MUT_MAGNITUDE
 
 class Mutator(ABC):
     def __init__(self, wrapper):
         self.wrapper = wrapper
 
 class SeedPolicyMutator(Mutator):
-    def __init__(self, wrapper):
+    def __init__(self, wrapper, fuzz_mut_bdgt):
         super().__init__(wrapper)
+        self.fuzz_mut_bdgt = fuzz_mut_bdgt
 
-    def mutate(self, seed_policy, seed, rng):
+    def mutate(self, seed, rng):
         # mut_magnitude = rng.integers(POOL_POP_MUT)
 
         self.wrapper.set_state(seed.hi_lvl_state)
         nn_state, hi_lvl_state = self.wrapper.get_state()
 
         next_state = nn_state
-        for _ in range(POOL_POP_MUT):
-            act, _ = seed_policy.predict(next_state, deterministic=True)
+        for _ in range(self.fuzz_mut_bdgt):
+            act = self.wrapper.model_step(next_state, deterministic=False)  # Stochastic
             _, next_state, done = self.wrapper.env_step(act)
             if done:
                 return None, None
@@ -29,15 +28,18 @@ class SeedPolicyMutator(Mutator):
         return nn_state, hi_lvl_state
 
 class RandomActionMutator(Mutator):
-    def __init__(self, wrapper):
+    def __init__(self, wrapper, fuzz_mut_bdgt):
         super().__init__(wrapper)
+        self.fuzz_mut_bdgt = fuzz_mut_bdgt
 
     def mutate(self, seed, rng):
         self.wrapper.set_state(seed.hi_lvl_state)
 
-        for _ in range(POOL_POP_MUT):
-            act = rng.choice(self.wrapper.action_space, 1)[0]
-            # act = rng.uniform(-1, 1, (4))
+        for _ in range(self.fuzz_mut_bdgt):
+            if self.wrapper.env_iden == "bipedal":
+                act = rng.uniform(-1, 1, (4))
+            else:
+                act = rng.choice(self.wrapper.action_space, 1)[0]
             _, nn_state, done = self.wrapper.env_step(act)
             if done:
                 return None, None
@@ -47,8 +49,9 @@ class RandomActionMutator(Mutator):
         return nn_state, hi_lvl_state
 
 class LinetrackOracleMutator(Mutator):
-    def __init__(self, wrapper):
+    def __init__(self, wrapper, orcl_mut_bdgt):
         super().__init__(wrapper)
+        self.orcl_mut_bdgt = orcl_mut_bdgt
 
     def mutate(self, seed, rng, mode="easy"):
         car_positions = []
@@ -62,12 +65,12 @@ class LinetrackOracleMutator(Mutator):
                     free_positions.append((lane_id, spot_id))
 
         if mode == "easy":        # remove cars
-            mut_ind = rng.choice(len(car_positions), MM_MUT_MAGNITUDE, replace=False)
+            mut_ind = rng.choice(len(car_positions), self.orcl_mut_bdgt, replace=False)
             mut_positions = np.array(car_positions)[mut_ind]
             for pos in mut_positions:
                 street[pos[0]][pos[1]] = None
         else:
-            mut_ind = rng.choice(len(free_positions), MM_MUT_MAGNITUDE, replace=False)
+            mut_ind = rng.choice(len(free_positions), self.orcl_mut_bdgt, replace=False)
             mut_positions = np.array(free_positions)[mut_ind]
 
             for pos in mut_positions:
@@ -84,7 +87,7 @@ class BipedalHCOracleStumpMutator(Mutator):
         GRASS, STUMP, STAIRS, PIT, _STATES_ = range(5)
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
 
-        _, _, _, _, _, _, _, _, _, _, terrain_type_poly, _, _, _ = hi_lvl_state
+        _, _, _, _, _, _, _, _, _, _, _, _, _, terrain_type_poly, _, _, _ = hi_lvl_state
 
         poly_list = []
         grass_ind = []
@@ -148,7 +151,7 @@ class BipedalEasyOracleMutator(Mutator):
             rough_coeff = 1
         else:
             vel_coeff = 0.9
-            rough_coeff = 1.5
+            rough_coeff = 1
 
         mut_terrain_y = []
         for i in range(TERRAIN_LENGTH):
@@ -176,10 +179,9 @@ class LunarOracleMoonHeightMutator(Mutator):
         CHUNKS = 11
 
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
-        lander_pos, _, _, _, _, _, _, _, height = hi_lvl_state
+        lander_pos, _, _, _, _, _, _, _, _, _, _, _, _, _, height = hi_lvl_state
         _, lander_height = lander_pos
 
-        mut_height = copy.deepcopy(height)
         if mode == "hard":
             if lander_height-MARGIN < ORG_HELIPAD_H:
                 return None
@@ -187,6 +189,7 @@ class LunarOracleMoonHeightMutator(Mutator):
         else:
             mut_helipad_height = rng.uniform(H/12, ORG_HELIPAD_H)
 
+        mut_height = rng.uniform(0, mut_helipad_height*2, size=(CHUNKS+1,))
         mut_height[CHUNKS//2-2] = mut_helipad_height
         mut_height[CHUNKS//2-1] = mut_helipad_height
         mut_height[CHUNKS//2+0] = mut_helipad_height
@@ -204,7 +207,7 @@ class LunarOracleVelMutator(Mutator):
 
     def mutate(self, seed, rng, mode="easy"):
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
-        _, lander_vel, _, _, _, _, _, _, _ = hi_lvl_state
+        _, lander_vel, _, _, _, _, _, _, _, _, _, _, _, _, _ = hi_lvl_state
         diff = rng.random()
         if mode == "easy":
             mut_lander_vel = (lander_vel[0], (1-diff) * lander_vel[1])
@@ -225,7 +228,7 @@ class LunarOracleMoonMutator(Mutator):
         H = VIEWPORT_H/SCALE
 
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
-        _, _, _, _, _, _, _, _, height = hi_lvl_state
+        _, _, _, _, _, _, _, _, _, _, _, _, _, _, height = hi_lvl_state
         mut_height = []
         if mode == "hard":
             for i in range(len(height)):

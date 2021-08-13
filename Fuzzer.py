@@ -6,24 +6,25 @@ import numpy as np
 import Mutator
 import Scheduler
 from Seed import Seed
-from fuzz_config import POOL_BUDGET, COV_DIST_THOLD
+from fuzz_config import FUZZ_BUDGET
 
 logger = logging.getLogger('fuzz_logger')
 
 class Fuzzer:
-    def __init__(self, rng, fuzz_type, fuzz_game, coverage):
+    def __init__(self, r_seed, fuzz_type, fuzz_game, coverage, coverage_thold, mut_budget):
 
-        self.rng = rng
+        self.rng = np.random.default_rng(r_seed)
         self.fuzz_type = fuzz_type
         self.game = fuzz_game
         self.cov_type = coverage
+        self.cov_thold = coverage_thold
 
         self.pool = []
         self.epochs = 0
         self.warning_cnt = 0
 
-        self.random_action_mutator = Mutator.RandomActionMutator(self.game)
-        self.seed_policy_mutator = Mutator.SeedPolicyMutator(self.game)
+        self.random_action_mutator = Mutator.RandomActionMutator(self.game, mut_budget)
+        self.seed_policy_mutator = Mutator.SeedPolicyMutator(self.game, mut_budget)
         self.schedule = Scheduler.QueueScheduler()
 
     # @profile
@@ -36,7 +37,7 @@ class Fuzzer:
 
         start_time = time.perf_counter()
         trial = 0
-        while (time.perf_counter() - start_time) < POOL_BUDGET:
+        while (time.perf_counter() - start_time) < FUZZ_BUDGET:
             trial += 1
             rnd = self.rng.random()
 
@@ -49,7 +50,7 @@ class Fuzzer:
                     seed = Seed(cand_nn, cand_hi_lvl, trial, time.perf_counter()-start_time)
 
                 if rnd < 0.4:
-                    cand_nn, cand_hi_lvl = self.seed_policy_mutator.mutate(self.game.seed_policy, seed, self.rng)
+                    cand_nn, cand_hi_lvl = self.seed_policy_mutator.mutate(seed, self.rng)
                 else:  # iow ->  rnd >= 0.4 and rnd < 0.8:
                     cand_nn, cand_hi_lvl = self.random_action_mutator.mutate(seed, self.rng)
             else:
@@ -58,12 +59,16 @@ class Fuzzer:
 
             # time start
             if self.is_interesting(cand_nn):
-                self.pool.append(Seed(cand_nn, cand_hi_lvl, trial, time.perf_counter()-start_time))
+                cur_time = time.perf_counter()-start_time
+                logger.info("New seed found at %s. Pool size: %d." % (str(cur_time), len(self.pool)))
+                self.pool.append(Seed(cand_nn, cand_hi_lvl, trial, cur_time))
 
             population_summary.append([trial, time.perf_counter()-start_time, len(self.pool)])
             # time end
 
-        logger.info("Pool Budget: %d, Size of the Pool: %d" % (POOL_BUDGET, len(self.pool)))
+        logger.info("Pool Budget: %d, Size of the Pool: %d" % (FUZZ_BUDGET, len(self.pool)))
+
+        self.total_trials = trial
 
         return population_summary
 
@@ -86,18 +91,7 @@ class Fuzzer:
             if dist < d_shortest:
                 d_shortest = dist
 
-        if d_shortest > COV_DIST_THOLD:
+        if d_shortest > self.cov_thold:
             return True
 
         return False
-
-
-# (4.592103481292725, 5.522678852081299)
-# (4.710066318511963, 5.54745626449585)
-# (4.577690601348877, 5.3980631828308105)
-# (4.489854335784912, 5.6655449867248535)
-# (4.122434616088867, 5.147953987121582)
-# seed pol (3.4958534240722656, 4.320772647857666)
-# (4.035912036895752, 5.315888404846191)
-# (4.646634578704834, 5.679597854614258)
-# (4.42028284072876, 5.343058109283447)

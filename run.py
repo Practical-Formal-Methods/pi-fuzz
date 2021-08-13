@@ -1,163 +1,129 @@
-import copy
 import time
+import pickle
 import argparse
 import xlsxwriter
-import numpy as np
-from os import listdir
-from os.path import isfile, join
-import xlrd
 import Oracle
-import Scheduler
 import EnvWrapper as EW
 import Fuzzer
-import Mutator
-from fuzz_utils import post_fuzz_analysis, plot_rq3_warn, plot_rq3_time, setup_logger, set_rngs, read_outs_excel
-from fuzz_config import RANDOM_SEEDS, N_FUZZ_RUNS
+from fuzz_utils import post_fuzz_analysis, setup_logger
 
 
-def test_policy(env_identifier, fuzz_type, agent_paths, sp_path, bug_type, coverage):
+def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, coverage_thold, r_seed, fuzz_mut_bdgt, orcl_mut_bdgt, delta):
 
-    workbook = xlsxwriter.Workbook('logs/out_%s_%s_dedup_%s.xlsx' % (agent_id, fuzz_start_time, fuzz_type))
+    workbook = xlsxwriter.Workbook('logs/out_%s_dedup_%s.xlsx' % (fuzz_start_time, fuzz_type))
     worksheet = workbook.add_worksheet()
-    header = ["fuzz_run_id", "bug_type", "coverage", "agent_name", "#easy_warns", "#hard_warns"]
+    header = ["random_seed", "bug_type", "coverage", "agent_name", "#easy_warns", "#hard_warns"]
     worksheet.write_row(0, 0, header)
 
-    fuzz_rngs, orcl_rngs = set_rngs()
+    game = EW.Wrapper(env_identifier)
+    game.create_environment(env_seed=r_seed)
+    game.create_model(agent_path, r_seed)
 
+    logger.info("\n\n")
+    logger.info("=" * 30)
+    logger.info("Fuzzing starts.")
+    logger.info("=" * 30)
+
+    fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
+    pop_summ = fuzzer.fuzz()
+
+    print("Pool size:", len(fuzzer.pool))
     rep_line = 0
-    resulting_pools = []
-    population_summaries = []
-    all_tot_warns_mm_e = []
-    all_tot_warns_mm_h = []
-    for r_id in range(N_FUZZ_RUNS):
-        game = EW.Wrapper(env_identifier)
-        game.create_environment(env_seed=RANDOM_SEEDS[r_id])
-        game.create_seed_policy("final_policies/dqn_lunar_300000.zip")
+    # for ap in agent_paths:
+    rep_line += 1
+    pname = agent_path.split("/")[-1].split(".")[0]
+    logger.info("\n\n")
+    logger.info(" *********** Policy %s is starting to be tested. ***********" % pname)
 
-        logger.info("\n\n")
-        logger.info("=" * 30)
-        logger.info("Fuzzer started. Fuzz run: %d" % r_id)
-        logger.info("=" * 30)
+    game.create_environment(env_seed=r_seed)
+    game.create_model(agent_path, r_seed)
+    mm_oracle = Oracle.MetamorphicOracle(game, mode=bug_type, r_seed=r_seed, delta=delta, orcl_mut_bdgt=orcl_mut_bdgt, de_dup=True)
 
-        fuzz_rng = np.random.default_rng(r_id)
-        fuzzer = Fuzzer.Fuzzer(rng=fuzz_rng, fuzz_type=fuzz_type, fuzz_game=game, coverage=coverage)
-        pop_summ = fuzzer.fuzz()
-        population_summaries.append(pop_summ)
-        resulting_pools.append(fuzzer.pool)
+    # game.create_linetrack_model(load_path=ap, r_seed=r_id)
 
-        print("Pool size:", len(fuzzer.pool))
-        all_rews = []
-        for ap in agent_paths:
-            game.create_model(ap)
-            rews = []
-            for sd in fuzzer.pool:
-                game.env.seed(123123)
-                game.set_state(sd.hi_lvl_state)
-                rew, fp = game.run_pol_fuzz(sd.data, mode="qualitative", render=False)  # this is always qualitative
-                rews.append(rew)
-            all_rews.append(rews)
-        mean_rews = np.mean(np.array(all_rews), axis=0)
+    tot_num_rejects = 0
+    warnings_mm_e = []
+    warnings_mm_h = []
+    for idx, fuzz_seed in enumerate(fuzzer.pool):
+        num_warn_mm_e, num_warn_mm_h, num_rejects = mm_oracle.explore(fuzz_seed)
+        num_warn_mm_tot = num_warn_mm_e + num_warn_mm_h
 
-        fltr_pool = []
-        for mr, sd in zip(mean_rews, fuzzer.pool):
-            if mr == 100 or mr == 0:
-                fltr_pool.append(sd)
+        fuzz_seed.num_warn_mm_hard = num_warn_mm_h
+        fuzz_seed.num_warn_mm_easy = num_warn_mm_e
 
-        logger.info("Common seeds have been found between %s.\nNumber of common seeds: %d" % (agent_paths, len(fltr_pool)))
+        warnings_mm_e.append(num_warn_mm_e)
+        warnings_mm_h.append(num_warn_mm_h)
 
-        for ap in agent_paths:
-            rep_line += 1
-            pname = ap.split("/")[-1].split(".")[0]
-            logger.info("\n\n")
-            logger.info(" *********** Policy %s is being tested.  ***********" % pname)
+        tot_num_rejects += num_rejects
+        logger.info("Metamorphic Oracle has found %d(E) + %d(H) = %d warnings in seed %d. Num rejects: %d." % (num_warn_mm_e, num_warn_mm_h, num_warn_mm_tot, idx, num_rejects))
 
-            orcl_rng = np.random.default_rng(r_id)
-            mm_oracle = Oracle.MetamorphicOracle(game, mode=bug_type, rng=orcl_rng, de_dup=True)
+    _, tot_warns_mm_e, _ = post_fuzz_analysis(warnings_mm_e)
+    _, tot_warns_mm_h, _ = post_fuzz_analysis(warnings_mm_h)
 
-            # game.create_linetrack_model(load_path=ap, r_seed=r_id)
+    logger.info("Total number of warnings (E) in this fuzz run: %d" % tot_warns_mm_e)
+    logger.info("Total number of warnings (H) in this fuzz run: %d" % tot_warns_mm_h)
+    logger.info("Total number of rejected Oracle mutations in this fuzz run: %d" % tot_num_rejects)
 
-            tot_num_rejects = 0
-            warnings_mm_e = []
-            warnings_mm_h = []
-            for idx, fuzz_seed in enumerate(fltr_pool):
-                num_warn_mm_e, num_warn_mm_h, num_rejects = mm_oracle.explore(fuzz_seed)
-                num_warn_mm_tot = num_warn_mm_e + num_warn_mm_h
+    report = [r_seed, bug_type, coverage, pname, tot_warns_mm_e, tot_warns_mm_h]
+    worksheet.write_row(rep_line, 0, report)
 
-                fuzz_seed.num_warn_mm_hard = num_warn_mm_h
-                fuzz_seed.num_warn_mm_easy = num_warn_mm_e
-
-                warnings_mm_e.append(num_warn_mm_e)
-                warnings_mm_h.append(num_warn_mm_h)
-
-                tot_num_rejects += num_rejects
-                logger.info("Metamorphic Oracle has found %d(E) + %d(H) = %d warnings in seed %d. Num rejects: %d." % (num_warn_mm_e, num_warn_mm_h, num_warn_mm_tot, idx, num_rejects))
-
-            _, tot_warns_mm_e, _ = post_fuzz_analysis(warnings_mm_e)
-            _, tot_warns_mm_h, _ = post_fuzz_analysis(warnings_mm_h)
-
-            all_tot_warns_mm_e.append(tot_warns_mm_e)
-            all_tot_warns_mm_h.append(tot_warns_mm_h)
-
-            logger.info("Total number of warnings (E) in this fuzz run: %d" % tot_warns_mm_e)
-            logger.info("Total number of warnings (H) in this fuzz run: %d" % tot_warns_mm_h)
-            logger.info("Total number of rejected Oracle mutations in this fuzz run: %d" % tot_num_rejects)
-
-            report = [r_id, bug_type, coverage, pname, tot_warns_mm_e, tot_warns_mm_h]
-            worksheet.write_row(rep_line, 0, report)
-
-    logger.info("Metamorphic Oracle summary in %d fuzz runs:" % N_FUZZ_RUNS)
-    logger.info("    Total number of E warnings: %s" % str(all_tot_warns_mm_e))
-    logger.info("    Total number of H warnings: %s" % str(all_tot_warns_mm_h))
+    logger.info("Metamorphic Oracle summary:")
+    logger.info("    Total number of E warnings: %s" % str(tot_warns_mm_e))
+    logger.info("    Total number of H warnings: %s" % str(tot_warns_mm_h))
 
     workbook.close()
 
-    return population_summaries, resulting_pools
+    num_cycles = fuzzer.schedule.cycles
+    total_trials = fuzzer.total_trials
+
+    return pop_summ, fuzzer.pool, tot_warns_mm_e, tot_warns_mm_h, num_cycles, total_trials
+
 
 fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
 
-# SET SEED IN FUZZ_CONFIG
-oracle_type = "metamorphic"
-coverage = "raw"
-bug_type = "qualitative"
-loggername = "fuzz_logger"
-logfilename = "logs/policy_testing_%s.log" % fuzz_start_time
+parser = argparse.ArgumentParser(prog="DebuggingPolicies", description="Find bugs in your policy.")
+parser.add_argument("-E", "--env_identifier", choices=['lunar', 'linetrack', 'bipedal', 'bipedal-hc'], required=True)
+parser.add_argument("-R", "--random_seed", type=int, required=True)
+parser.add_argument("-A", "--agent_path", required=True)
+parser.add_argument("-F", "--fuzz_type", default='gbox', choices=['gbox', 'bbox'])
+parser.add_argument("-O", "--oracle_type", default="metamorphic")
+parser.add_argument("-B", "--bug_type", default="qualitative", choices=['qualitative', 'quantitative'])
+parser.add_argument("-C", "--coverage", default="raw", choices=['raw', 'abs'])
+parser.add_argument("-CT", "--coverage_thold", default=2.0, type=float)  # 0.75 for lunar, 2.0 for bipedal
+parser.add_argument("-L", "--logfile", default="logs/policy_testing_%s.log" % fuzz_start_time)
+parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and ipedal
+parser.add_argument("-OMB", "--orcl_mut_bdgt", default=25, type=int)
+parser.add_argument("-D", "--delta", default=1.0, type=float)
+# parser.add_argument("-SP", "--seed_policy_path", action='store',  nargs='+', required=True)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("env_identifier")
-parser.add_argument("agent_name")
-parser.add_argument("seed_policy_name")
-parser.add_argument("fuzz_type")
 args = parser.parse_args()
 
 env_iden = args.env_identifier
-agent_id = args.agent_name
+rand_seed = args.random_seed
+agent_path = args.agent_path
 fuzz_type = args.fuzz_type
+oracle_type = args.oracle_type
+bug_type = args.bug_type
+coverage = args.coverage
+coverage_thold = args.coverage_thold
+fuzz_mut_bdgt = args.fuzz_mut_bdgt
+orcl_mut_bdgt = args.orcl_mut_bdgt
+logfilename = args.logfile
+delta = args.delta
+loggername = "fuzz_logger"
 
 logger = setup_logger(loggername, logfilename)
-
 logger.info("#############################")
 logger.info("### POLICY TESTING REPORT ###")
 logger.info("#############################")
-
-logger.info("\nRandom Seeds that will be used in %d fuzz runs: %s" % (N_FUZZ_RUNS, RANDOM_SEEDS))
+logger.info("Policy being tested: %s", agent_path)
 logger.info("Fuzzer type: %s", fuzz_type)
 logger.info("Bug Type: %s", bug_type)
 logger.info("Coverage Type: %s", coverage)
 logger.info("Oracle Type: %s", oracle_type)
 
-ppaths = []
-for f in listdir("final_policies"):
-    if isfile(join("final_policies", f)) and agent_id in f:
-        ppaths.append(join("final_policies", f))
-
-sp_path = "final_policies/%s" % args.seed_policy_name
-
-population_summaries_gb, pools_gb = test_policy(env_iden, "gbox", ppaths, sp_path, bug_type, coverage)
-# population_summaries_bb, pools_bb = test_policy(env_iden, "bbox", ppaths, bug_type, coverage)
-
-# plot_rq3_time(population_summaries_gb, population_summaries_bb)
-# plot_rq3_warn(pools)  # plot graph
-
+test_out = test_policy(env_iden, fuzz_type, agent_path, bug_type, coverage, coverage_thold, rand_seed, fuzz_mut_bdgt, orcl_mut_bdgt, delta)
+pickle.dump(test_out, open("%s_%s_%d_%s.p"%(env_iden, fuzz_type, rand_seed, fuzz_start_time), "wb"))
 
 
 
@@ -233,3 +199,23 @@ population_summaries_gb, pools_gb = test_policy(env_iden, "gbox", ppaths, sp_pat
     # rew, fp = game.run_pol_fuzz(obs, mode="quantitative", render=True)  # this is always qualitative
     # print(rew)
     # exit()
+
+
+    ## LEGACY CODE
+    # all_rews = []
+    # for ap in agent_paths:
+    #     game.create_model(ap)
+    #     rews = []
+    #     for sd in fuzzer.pool:
+    #         game.env.seed(r_seed)
+    #         game.set_state(sd.hi_lvl_state)
+    #         rew, fp = game.run_pol_fuzz(sd.data, mode="qualitative", render=False)  # this is always qualitative
+    #         rews.append(rew)
+    #     all_rews.append(rews)
+    # mean_rews = np.mean(np.array(all_rews), axis=0)
+    #
+    # fltr_pool = []
+    # for mr, sd in zip(mean_rews, fuzzer.pool):
+    #     if mr == 100 or mr == 0:
+    #         fltr_pool.append(sd)
+    # logger.info("Common seeds have been found between %s.\nNumber of common seeds: %d" % (agent_paths, len(fltr_pool)))

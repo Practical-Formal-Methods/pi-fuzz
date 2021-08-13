@@ -1,10 +1,12 @@
 import time
+import torch as th
 
 from mod_gym import gym
 
 from linetrack.dqn.agent import Pseudo_Agent, Agent
 from linetrack.model.model import Linetrack
 from mod_stable_baselines3.stable_baselines3 import DQN, PPO
+from mod_stable_baselines3.stable_baselines3.common.policies import ActorCriticPolicy
 
 
 class Wrapper():
@@ -20,7 +22,7 @@ class Wrapper():
         if self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             model = PPO.load(load_path, env=self.env)
         elif self.env_iden == "lunar":
-            model = DQN.load(load_path, env=self.env)
+            model = PPO.load(load_path, env=self.env)
 
         self.seed_policy = model
 
@@ -33,12 +35,16 @@ class Wrapper():
         self.env = env
         # self.action_space = range(env.action_space.n)  # Discrete(4)
 
-    def create_bipedal_model(self, load_path):
-        model = PPO.load(load_path, env=self.env)
+    def create_bipedal_model(self, load_path, r_seed):
+        ppo = PPO(env=self.env, seed=r_seed, policy=ActorCriticPolicy)
+        model = ppo.load(load_path, env=self.env)
         self.model = model
 
-    def create_lunar_model(self, load_path):
-        model = DQN.load(load_path, env=self.env)
+    def create_lunar_model(self, load_path, r_seed):
+        ppo = PPO(env=self.env, seed=r_seed, policy=ActorCriticPolicy)
+        model = ppo.load(load_path, env=self.env)
+        # model = PPO.load(load_path, env=self.env)
+        # PPO.set_random_seed(r_seed)
         self.model = model
 
     def create_lunar_environment(self, seed):
@@ -74,9 +80,9 @@ class Wrapper():
 
     def create_model(self, load_path, r_seed=None):
         if self.env_iden == "lunar":
-            self.create_lunar_model(load_path)
+            self.create_lunar_model(load_path, r_seed)
         elif self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
-            self.create_bipedal_model(load_path)
+            self.create_bipedal_model(load_path, r_seed)
         elif self.env_iden == "linetrack":
             self.create_linetrack_model(load_path, r_seed)
 
@@ -97,10 +103,10 @@ class Wrapper():
             self.env.set_state(hi_lvl_state, extra)
 
 
-    def model_step(self, state):
+    def model_step(self, state, deterministic=True):
         act = None
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
-            act, _ = self.model.predict(state, deterministic=True)
+            act, _ = self.model.predict(state, deterministic=deterministic)
         elif self.env_iden == "linetrack":
             act = self.model.act(state)
 
@@ -115,7 +121,7 @@ class Wrapper():
 
         return reward, next_state, done
 
-    def run_pol_fuzz(self, init_state, mode="quantitative", render=False):
+    def run_pol_fuzz(self, init_state, mode="qualitative", render=False):
         next_state = init_state
         full_play = []
         total_reward = 0
@@ -125,15 +131,10 @@ class Wrapper():
             reward, next_state, done = self.env_step(act)
             if render:
                 self.env.render()
-
-                if len(all_rews) < 5:
-                    time.sleep(3)
-                else:
-                    time.sleep(0.01)
+                time.sleep(0.01)
 
             total_reward += reward
             all_rews.append(reward)
-
             full_play.append(act)
             if done:
                 if mode == "qualitative":

@@ -9,7 +9,7 @@ import pandas as pd
 import scipy.stats
 import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
-from fuzz_config import COV_DIST_THOLD, POOL_BUDGET, N_FUZZ_RUNS, RANDOM_SEEDS
+from fuzz_config import FUZZ_BUDGET
 
 def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
 
@@ -21,7 +21,7 @@ def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
         pp = np.array(pp)
         plt.plot(pp[:, 1], pp[:, 2], "--", lw=2)
 
-    plt.savefig("results/rq3_poolovertime_timebdgt" + str(POOL_BUDGET) + ".pdf")
+    plt.savefig("results/rq3_poolovertime_timebdgt" + str(FUZZ_BUDGET) + ".pdf")
 
 
 def sub_rq3_warn(pools):
@@ -36,7 +36,7 @@ def sub_rq3_warn(pools):
     all_warns_over_time = []
     for ws_times in all_warn_seed_times:
         warn_over_time = []
-        for sec in range(POOL_BUDGET):
+        for sec in range(FUZZ_BUDGET):
             warn_over_time.append(sum(wst < sec for wst in ws_times))
         all_warns_over_time.append(warn_over_time)
     
@@ -61,26 +61,26 @@ def plot_rq3_warn(agent_id, pools_g, pools_b):
         plt.plot(range(POOL_BUDGET), wot, "--", lw=2)
     '''
 
-    plt.plot(range(POOL_BUDGET), a_w_o_t_g_mean, lw=2, label='graybox', color='blue')
-    plt.fill_between(range(POOL_BUDGET), a_w_o_t_g_mean+a_w_o_t_g_std, a_w_o_t_g_mean-a_w_o_t_g_std, facecolor='blue', alpha=0.5)
+    plt.plot(range(FUZZ_BUDGET), a_w_o_t_g_mean, lw=2, label='graybox', color='blue')
+    plt.fill_between(range(FUZZ_BUDGET), a_w_o_t_g_mean+a_w_o_t_g_std, a_w_o_t_g_mean-a_w_o_t_g_std, facecolor='blue', alpha=0.5)
     
-    plt.plot(range(POOL_BUDGET), a_w_o_t_b_mean, lw=2, label='blackbox', color='red')
-    plt.fill_between(range(POOL_BUDGET), a_w_o_t_b_mean+a_w_o_t_b_std, a_w_o_t_b_mean-a_w_o_t_b_std, facecolor='red', alpha=0.5)
+    plt.plot(range(FUZZ_BUDGET), a_w_o_t_b_mean, lw=2, label='blackbox', color='red')
+    plt.fill_between(range(FUZZ_BUDGET), a_w_o_t_b_mean+a_w_o_t_b_std, a_w_o_t_b_mean-a_w_o_t_b_std, facecolor='red', alpha=0.5)
 
     plt.xlabel("Time(sec)")
     plt.ylabel("# Warnings")
     plt.legend(loc="upper left")
 
-    plt.savefig("results/rq3_warnovertime_mustd_timebdgt_%d_%s.pdf" % (POOL_BUDGET, agent_id) )
+    plt.savefig("results/rq3_warnovertime_mustd_timebdgt_%d_%s.pdf" % (FUZZ_BUDGET, agent_id) )
 
 
 def plot_rq3_trial(pool_pop_summ, pool):
     data_mean = np.array(pool_pop_summ).mean(axis=0)
     data_sigma = np.array(pool_pop_summ).std(axis=0)
 
-    plt.plot(range(POOL_BUDGET), data_mean, lw=2, label='mean', color='blue')
-    plt.fill_between(range(POOL_BUDGET), data_mean+data_sigma, data_mean-data_sigma, facecolor='blue', alpha=0.5)
-    plt.savefig("results/rq3_pbdgt" + str(POOL_BUDGET) + ".pdf")
+    plt.plot(range(FUZZ_BUDGET), data_mean, lw=2, label='mean', color='blue')
+    plt.fill_between(range(FUZZ_BUDGET), data_mean+data_sigma, data_mean-data_sigma, facecolor='blue', alpha=0.5)
+    plt.savefig("results/rq3_pbdgt" + str(FUZZ_BUDGET) + ".pdf")
 
 def post_fuzz_analysis(warnings):
     var = np.var(warnings)
@@ -92,6 +92,7 @@ def post_fuzz_analysis(warnings):
 
     return ind_warn_norm, tot_warn_norm, var
 
+# LEGACY CODE
 def set_rngs():
     agent_rngs = []
     fuzz_rngs = []
