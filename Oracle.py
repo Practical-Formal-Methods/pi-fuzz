@@ -45,14 +45,17 @@ class MetamorphicOracle(Oracle):
     def explore(self, fuzz_seed):
         self.game.set_state(fuzz_seed.hi_lvl_state)  # [fuzz_seed.state_env, fuzz_seed.data[-1]])
         agent_reward, _ = self.game.run_pol_fuzz(fuzz_seed.data, self.mode)
-        # v = fuzz_seed.data[-1]
 
         num_rejects = 0
         num_warning_easy = 0
         num_warning_hard = 0
         bug_states = []
         for idx in range(SEARCH_BUDGET):
-            self.game.env.seed(self.r_seed)
+            if self.game.env_iden == "linetrack":
+                exp_rng = np.random.default_rng(self.r_seed)
+                self.game.env.reset(exp_rng)
+            else:
+                self.game.env.seed(self.r_seed)
             # make map EASIER
             if idx % 2 == 0:
                 mut_state = self.mutator.mutate(fuzz_seed, self.rng, mode='easy')
@@ -60,10 +63,10 @@ class MetamorphicOracle(Oracle):
                     num_rejects += 1
                     continue
 
-                self.game.set_state(mut_state)  # [street, v])
+                self.game.set_state(mut_state)  # linetrack: [street, v])
                 nn_state, _ = self.game.get_state()
 
-                mut_reward, _ = self.game.run_pol_fuzz(nn_state, mode=self.mode)
+                mut_reward, _ = self.game.run_pol_fuzz(nn_state, self.mode)
                 if self.de_dup and list(nn_state) in bug_states: continue
                 if agent_reward - mut_reward > self.delta:
                     num_warning_easy += 1
@@ -76,7 +79,7 @@ class MetamorphicOracle(Oracle):
                     num_rejects += 1
                     continue
 
-                self.game.set_state(mut_state)  # [street, v])
+                self.game.set_state(mut_state)  # linetrack: [street, v])
                 nn_state, _ = self.game.get_state()
 
                 mut_reward, _ = self.game.run_pol_fuzz(nn_state, mode=self.mode)

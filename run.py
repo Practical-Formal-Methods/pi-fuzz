@@ -125,7 +125,8 @@ logger.info("Oracle Type: %s", oracle_type)
 test_out = test_policy(env_iden, fuzz_type, agent_path, bug_type, coverage, coverage_thold, rand_seed, fuzz_mut_bdgt, orcl_mut_bdgt, delta)
 pickle.dump(test_out, open("%s_%s_%d_%s.p"%(env_iden, fuzz_type, rand_seed, fuzz_start_time), "wb"))
 
-
+# -E linetrack -R 123 -A final_policies/linetrack_org.pth -F gbox -CT 5.0 -FMB 3 -OMB 1
+# -E lunar -R 123 -A final_policies/lunar_org -F gbox -CT 0.75 -FMB 25 -OMB 25
 
 
 #

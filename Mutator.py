@@ -56,7 +56,8 @@ class LinetrackOracleMutator(Mutator):
     def mutate(self, seed, rng, mode="easy"):
         car_positions = []
         free_positions = []
-        street = copy.deepcopy(seed.hi_lvl_state)
+        street, v = seed.hi_lvl_state
+        street = copy.deepcopy(street)
         for lane_id, lane in enumerate(street):
             for spot_id, spot in enumerate(lane):
                 if (spot is not None) and (str(spot) != "A"):
@@ -76,7 +77,9 @@ class LinetrackOracleMutator(Mutator):
             for pos in mut_positions:
                 street[pos[0]][pos[1]] = self.wrapper.env.get_new_car(pos[0])
 
-        return street
+        mut_hi_lvl_state = [street, v]
+
+        return mut_hi_lvl_state
 
 
 class BipedalHCOracleStumpMutator(Mutator):

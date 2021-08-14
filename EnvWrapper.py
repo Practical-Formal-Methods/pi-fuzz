@@ -1,5 +1,6 @@
 import time
-import torch as th
+
+import numpy as np
 
 from mod_gym import gym
 
@@ -68,7 +69,7 @@ class Wrapper():
         self.env = env
         self.action_space = env.action_space
 
-    def create_environment(self, rng=None, env_seed=None):
+    def create_environment(self, env_seed=None):
         if self.env_iden == "lunar":
             self.create_lunar_environment(env_seed)
         elif self.env_iden == "bipedal":
@@ -76,6 +77,7 @@ class Wrapper():
         elif self.env_iden == "bipedal-hc":
             self.create_bipedal_environment(env_seed, hardcore=True)
         elif self.env_iden == "linetrack":
+            rng = np.random.default_rng(env_seed)
             self.create_linetrack_environment(rng)
 
     def create_model(self, load_path, r_seed=None):
@@ -92,16 +94,15 @@ class Wrapper():
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             nn_state, hi_lvl_state = self.env.get_state()
         elif self.env_iden == "linetrack":
-            nn_state, hi_lvl_state = self.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
-
+            nn_state, street = self.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+            hi_lvl_state = [street, nn_state[-1]]
         return nn_state, hi_lvl_state
 
-    def set_state(self, hi_lvl_state, extra=None):
+    def set_state(self, hi_lvl_state):
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             self.env.reset(hi_lvl_state=hi_lvl_state)
         elif self.env_iden == "linetrack":
-            self.env.set_state(hi_lvl_state, extra)
-
+            self.env.set_state(hi_lvl_state)
 
     def model_step(self, state, deterministic=True):
         act = None
@@ -117,15 +118,15 @@ class Wrapper():
         if self.env_iden == "lunar" or self.env_iden == "bipedal"  or self.env_iden == "bipedal-hc":
             next_state, reward, done, info = self.env.step(action)
         elif self.env_iden == "linetrack":
-            next_state, reward, done = self.env.step(action)
+            reward, next_state, done = self.env.step(action)
 
         return reward, next_state, done
 
     def run_pol_fuzz(self, init_state, mode="qualitative", render=False):
         next_state = init_state
         full_play = []
-        total_reward = 0
         all_rews = []
+        total_reward = 0
         while True:
             act = self.model_step(next_state)
             reward, next_state, done = self.env_step(act)
@@ -133,7 +134,11 @@ class Wrapper():
                 self.env.render()
                 time.sleep(0.01)
 
-            total_reward += reward
+            if self.env_iden == "lunar" or self.env_iden == "bipedal":
+                total_reward += reward
+            else:
+                total_reward = self.env.acc_return  # += np.power(GAMMA, num_steps) * reward
+
             all_rews.append(reward)
             full_play.append(act)
             if done:
