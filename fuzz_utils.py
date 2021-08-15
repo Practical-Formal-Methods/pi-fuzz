@@ -11,6 +11,62 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from fuzz_config import FUZZ_BUDGET
 
+def plot_rq3_time_cloud(pool_pop_summ_gb, pool_pop_summ_bb):
+
+    all_size_gb = []
+    for pp in pool_pop_summ_gb:
+        size_gb = []
+        times = pp[:, 1]
+        for sec in range(FUZZ_BUDGET):
+            cnt = 0
+            for tm in times:
+                if tm > sec:
+                    break
+                cnt += 1
+            if cnt == 0:
+                size_gb.append(0)
+            else:
+                size_gb.append(pp[:, 2][cnt-1])
+
+        all_size_gb.append(size_gb)
+
+    all_size_bb = []
+    for pp in pool_pop_summ_bb:
+        size_bb = []
+        times = pp[:, 1]
+        for sec in range(FUZZ_BUDGET):
+            cnt = 0
+            for tm in times:
+                if tm > sec:
+                    break
+                cnt += 1
+            if cnt == 0:
+                size_bb.append(0)
+            else:
+                size_bb.append(pp[:, 2][cnt-1])
+
+        all_size_bb.append(size_bb)
+
+
+    all_size_gb_mean = np.array(all_size_gb).mean(axis=0)
+    all_size_bb_mean = np.array(all_size_bb).mean(axis=0)
+
+    all_size_gb_std = np.array(all_size_gb).std(axis=0)
+    all_size_bb_std = np.array(all_size_bb).std(axis=0)
+
+
+    plt.plot(range(FUZZ_BUDGET), all_size_gb_mean, lw=2, label='graybox', color='blue')
+    plt.fill_between(range(FUZZ_BUDGET), all_size_gb_mean+all_size_gb_std, all_size_gb_mean-all_size_gb_std, facecolor='blue', alpha=0.5)
+
+    plt.plot(range(FUZZ_BUDGET), all_size_bb_mean, lw=2, label='blackbox', color='red')
+    plt.fill_between(range(FUZZ_BUDGET), all_size_bb_mean+all_size_bb_std, all_size_bb_mean-all_size_bb_std, facecolor='red', alpha=0.5)
+
+    plt.xlabel("Time (sec)")
+    plt.ylabel("Pool Size")
+    plt.legend(loc="upper left")
+
+    plt.savefig("results/rq3_poolsize_overtime_cloud_timebdgt_%d.pdf" % (FUZZ_BUDGET) )
+
 def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
 
     for pp in pool_pop_summ_gb:
