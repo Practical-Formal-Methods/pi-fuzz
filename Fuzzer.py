@@ -57,14 +57,12 @@ class Fuzzer:
                 self.game.env.reset()  # rng=self.rng)
                 cand_nn, cand_hi_lvl = self.game.get_state()
 
-            # time start
-            if self.is_interesting(cand_nn):
+            if cand_nn is not None and self.is_interesting(cand_nn):
                 cur_time = time.perf_counter()-start_time
                 logger.info("New seed found at %s. Pool size: %d." % (str(cur_time), len(self.pool)))
                 self.pool.append(Seed(cand_nn, cand_hi_lvl, trial, cur_time))
 
             population_summary.append([trial, time.perf_counter()-start_time, len(self.pool)])
-            # time end
 
         logger.info("Pool Budget: %d, Size of the Pool: %d" % (FUZZ_BUDGET, len(self.pool)))
 
@@ -73,7 +71,6 @@ class Fuzzer:
         return population_summary
 
     def is_interesting(self, cand):
-        if cand is None: return False
 
         if self.cov_type == "abs":
             cand = torch.tensor(cand).float()
