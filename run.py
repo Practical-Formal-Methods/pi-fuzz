@@ -94,7 +94,7 @@ parser.add_argument("-L", "--logfile", default="logs/policy_testing_%s.log" % fu
 parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and ipedal
 parser.add_argument("-OMB", "--orcl_mut_bdgt", default=25, type=int)
 parser.add_argument("-D", "--delta", default=1.0, type=float)
-# parser.add_argument("-SP", "--seed_policy_path", action='store',  nargs='+', required=True)
+parser.add_argument("-USP", "--use_sp", action='store_true', default=False)
 
 args = parser.parse_args()
 
