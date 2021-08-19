@@ -8,9 +8,9 @@ import Fuzzer
 from fuzz_utils import post_fuzz_analysis, setup_logger
 
 
-def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, coverage_thold, r_seed, fuzz_mut_bdgt, orcl_mut_bdgt, delta):
+def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, coverage_thold, r_seed, fuzz_mut_bdgt, orcl_mut_bdgt, use_seedp, delta):
 
-    workbook = xlsxwriter.Workbook('logs/out_%s_dedup_%s.xlsx' % (fuzz_start_time, fuzz_type))
+    workbook = xlsxwriter.Workbook('logs_/out_%s_dedup_%s.xlsx' % (fuzz_start_time, fuzz_type))
     worksheet = workbook.add_worksheet()
     header = ["random_seed", "bug_type", "coverage", "agent_name", "#easy_warns", "#hard_warns"]
     worksheet.write_row(0, 0, header)
@@ -24,7 +24,7 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     logger.info("Fuzzing starts.")
     logger.info("=" * 30)
 
-    fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
+    fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, use_seedp=use_seedp, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
     pop_summ = fuzzer.fuzz()
 
     #pickle.dump([fuzzer.pool, pop_summ], open("%s_%s_%d_%s_nosp_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time), "wb"))
@@ -93,7 +93,7 @@ parser.add_argument("-O", "--oracle_type", default="metamorphic")
 parser.add_argument("-B", "--bug_type", default="qualitative", choices=['qualitative', 'quantitative'])
 parser.add_argument("-C", "--coverage", default="raw", choices=['raw', 'abs'])
 parser.add_argument("-CT", "--coverage_thold", default=2.0, type=float)  # 0.75 for lunar, 2.0 for bipedal
-parser.add_argument("-L", "--logfile", default="logs/policy_testing_%s.log" % fuzz_start_time)
+parser.add_argument("-L", "--logfile", default="logs_/policy_testing_%s.log" % fuzz_start_time)
 parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and ipedal
 parser.add_argument("-OMB", "--orcl_mut_bdgt", default=25, type=int)
 parser.add_argument("-D", "--delta", default=1.0, type=float)
@@ -113,6 +113,8 @@ fuzz_mut_bdgt = args.fuzz_mut_bdgt
 orcl_mut_bdgt = args.orcl_mut_bdgt
 logfilename = args.logfile
 delta = args.delta
+use_seedp = args.use_sp
+
 loggername = "fuzz_logger"
 
 logger = setup_logger(loggername, logfilename)
@@ -125,7 +127,7 @@ logger.info("Bug Type: %s", bug_type)
 logger.info("Coverage Type: %s", coverage)
 logger.info("Oracle Type: %s", oracle_type)
 
-test_out = test_policy(env_iden, fuzz_type, agent_path, bug_type, coverage, coverage_thold, rand_seed, fuzz_mut_bdgt, orcl_mut_bdgt, delta)
+test_out = test_policy(env_iden, fuzz_type, agent_path, bug_type, coverage, coverage_thold, rand_seed, fuzz_mut_bdgt, orcl_mut_bdgt, use_seedp, delta)
 pickle.dump(test_out, open("%s_%s_%d_%s.p"%(env_iden, fuzz_type, rand_seed, fuzz_start_time), "wb"))
 
 # -E linetrack -R 123 -A final_policies/linetrack_org.pth -F gbox -CT 5.0 -FMB 3 -OMB 1
