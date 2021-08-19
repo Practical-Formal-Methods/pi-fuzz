@@ -37,13 +37,13 @@ class QueueScheduler(Scheduler):
 
 class RandomScheduler(Scheduler):
     # using random scheduler can be problematic. check pool population code
-    def choose(self, pool):
+    def choose(self, pool, rng):
         pool = super().filter(pool)
         if not pool:
             return None
         else:
-            seed = np.random.choice(pool)
-            seed.energy = 0
+            seed = rng.choice(pool)
+            # seed.energy = 0
             return seed
 
 
