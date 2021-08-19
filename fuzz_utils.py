@@ -15,11 +15,14 @@ def plot_rq3_time_cloud(pool_pop_summ_gb, pool_pop_summ_bb):
 
     all_size_gb = []
     for pp in pool_pop_summ_gb:
+        print("yep")
         size_gb = []
+        pp = np.array(pp)
         times = pp[:, 1]
-        for sec in range(FUZZ_BUDGET):
+        lptr = 0
+        for sec in range(FUZZ_BUDGET)[0::100]:
             cnt = 0
-            for tm in times:
+            for tm in times[lptr:]:
                 if tm > sec:
                     break
                 cnt += 1
@@ -28,15 +31,19 @@ def plot_rq3_time_cloud(pool_pop_summ_gb, pool_pop_summ_bb):
             else:
                 size_gb.append(pp[:, 2][cnt-1])
 
+            lptr = cnt
         all_size_gb.append(size_gb)
 
     all_size_bb = []
     for pp in pool_pop_summ_bb:
+        print("yep2")
         size_bb = []
+        pp = np.array(pp)
         times = pp[:, 1]
-        for sec in range(FUZZ_BUDGET):
+        lptr = 0
+        for sec in range(FUZZ_BUDGET)[0::100]:
             cnt = 0
-            for tm in times:
+            for tm in times[lptr:]:
                 if tm > sec:
                     break
                 cnt += 1
@@ -45,6 +52,7 @@ def plot_rq3_time_cloud(pool_pop_summ_gb, pool_pop_summ_bb):
             else:
                 size_bb.append(pp[:, 2][cnt-1])
 
+            lptr = cnt
         all_size_bb.append(size_bb)
 
 
@@ -55,11 +63,11 @@ def plot_rq3_time_cloud(pool_pop_summ_gb, pool_pop_summ_bb):
     all_size_bb_std = np.array(all_size_bb).std(axis=0)
 
 
-    plt.plot(range(FUZZ_BUDGET), all_size_gb_mean, lw=2, label='graybox', color='blue')
-    plt.fill_between(range(FUZZ_BUDGET), all_size_gb_mean+all_size_gb_std, all_size_gb_mean-all_size_gb_std, facecolor='blue', alpha=0.5)
+    plt.plot(range(FUZZ_BUDGET)[0::100], all_size_gb_mean, lw=2, label='graybox', color='blue')
+    plt.fill_between(range(FUZZ_BUDGET)[0::100], all_size_gb_mean+all_size_gb_std, all_size_gb_mean-all_size_gb_std, facecolor='blue', alpha=0.5)
 
-    plt.plot(range(FUZZ_BUDGET), all_size_bb_mean, lw=2, label='blackbox', color='red')
-    plt.fill_between(range(FUZZ_BUDGET), all_size_bb_mean+all_size_bb_std, all_size_bb_mean-all_size_bb_std, facecolor='red', alpha=0.5)
+    plt.plot(range(FUZZ_BUDGET)[0::100], all_size_bb_mean, lw=2, label='blackbox', color='red')
+    plt.fill_between(range(FUZZ_BUDGET)[0::100], all_size_bb_mean+all_size_bb_std, all_size_bb_mean-all_size_bb_std, facecolor='red', alpha=0.5)
 
     plt.xlabel("Time (sec)")
     plt.ylabel("Pool Size")
