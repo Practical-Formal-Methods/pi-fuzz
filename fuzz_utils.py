@@ -442,12 +442,11 @@ def read_outs_excel(folder=None, fuzz_type="gbox"):
 
     boxplot("all_agents", fuzz_type, bug_type, all_warns)
 
-def boxplot(agent_id, fuzz_type, bug_type, num_tot_warn):
+def boxplot(env_idn, fuzz_types, num_tot_warn):
     green_diamond = dict(markerfacecolor="g", marker="D")
     fig, ax = plt.subplots()
-    ax.set_title("Num. of Warn / %s" % bug_type)
     ax.set_ylabel("# Warnings")
     ax.set_xlabel("Agent Quality (Higher Better)")
     ax.boxplot(num_tot_warn, flierprops=green_diamond)
-    ax.set_xticklabels(["1", "2", "3", "4"])
-    plt.savefig("num_warn_%s_%s_%s.pdf" % (agent_id, fuzz_type, bug_type))
+    ax.set_xticklabels(fuzz_types)
+    plt.savefig("num_warn_boxplot_%s.pdf" % (env_idn))
