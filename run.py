@@ -27,7 +27,9 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
     pop_summ = fuzzer.fuzz()
 
-    print("Pool size:", len(fuzzer.pool))
+    #pickle.dump([fuzzer.pool, pop_summ], open("%s_%s_%d_%s_nosp_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time), "wb"))
+    print("Pool size nosp:", len(fuzzer.pool))
+    
     rep_line = 0
     # for ap in agent_paths:
     rep_line += 1
@@ -76,6 +78,7 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     num_cycles = fuzzer.schedule.cycles
     total_trials = fuzzer.total_trials
 
+    print(len(pop_summ), len(fuzzer.pool), tot_warns_mm_e, tot_warns_mm_h, num_cycles, total_trial)
     return pop_summ, fuzzer.pool, tot_warns_mm_e, tot_warns_mm_h, num_cycles, total_trials
 
 
