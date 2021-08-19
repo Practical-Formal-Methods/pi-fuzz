@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from fuzz_config import FUZZ_BUDGET
 
-def plot_rq3_time_cloud(pool_pop_summ_gb, pool_pop_summ_bb):
+def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb):  #, pool_pop_summ_gbns):
 
     all_size_gb = []
     for pp in pool_pop_summ_gb:
@@ -20,7 +20,7 @@ def plot_rq3_time_cloud(pool_pop_summ_gb, pool_pop_summ_bb):
         pp = np.array(pp)
         times = pp[:, 1]
         lptr = 0
-        for sec in range(FUZZ_BUDGET)[0::100]:
+        for sec in range(FUZZ_BUDGET)[0::200]:
             cnt = 0
             for tm in times[lptr:]:
                 if tm > sec:
@@ -41,7 +41,7 @@ def plot_rq3_time_cloud(pool_pop_summ_gb, pool_pop_summ_bb):
         pp = np.array(pp)
         times = pp[:, 1]
         lptr = 0
-        for sec in range(FUZZ_BUDGET)[0::100]:
+        for sec in range(FUZZ_BUDGET)[0::200]:
             cnt = 0
             for tm in times[lptr:]:
                 if tm > sec:
@@ -55,25 +55,53 @@ def plot_rq3_time_cloud(pool_pop_summ_gb, pool_pop_summ_bb):
             lptr = cnt
         all_size_bb.append(size_bb)
 
+    '''
+    all_size_gbns = []
+    for pp in pool_pop_summ_gbns:
+        print("yep3")
+        size_bb = []
+        pp = np.array(pp)
+        times = pp[:, 1]
+        lptr = 0
+        for sec in range(FUZZ_BUDGET)[0::400]:
+            cnt = 0
+            for tm in times[lptr:]:
+                if tm > sec:
+                    break
+                cnt += 1
+            if cnt == 0:
+                size_bb.append(0)
+            else:
+                size_bb.append(pp[:, 2][cnt-1])
+
+            lptr = cnt
+        all_size_gbns.append(size_bb)
+    '''
 
     all_size_gb_mean = np.array(all_size_gb).mean(axis=0)
     all_size_bb_mean = np.array(all_size_bb).mean(axis=0)
+    #all_size_gbns_mean = np.array(all_size_gbns).mean(axis=0)
 
     all_size_gb_std = np.array(all_size_gb).std(axis=0)
     all_size_bb_std = np.array(all_size_bb).std(axis=0)
+    #all_size_gbns_std = np.array(all_size_gbns).std(axis=0)
 
 
-    plt.plot(range(FUZZ_BUDGET)[0::100], all_size_gb_mean, lw=2, label='graybox', color='blue')
-    plt.fill_between(range(FUZZ_BUDGET)[0::100], all_size_gb_mean+all_size_gb_std, all_size_gb_mean-all_size_gb_std, facecolor='blue', alpha=0.5)
+    plt.plot(range(FUZZ_BUDGET)[0::200], all_size_gb_mean, lw=2, label='Gbox Fuzzing', color='blue')
+    plt.fill_between(range(FUZZ_BUDGET)[0::200], all_size_gb_mean+all_size_gb_std, all_size_gb_mean-all_size_gb_std, facecolor='blue', alpha=0.5)
 
-    plt.plot(range(FUZZ_BUDGET)[0::100], all_size_bb_mean, lw=2, label='blackbox', color='red')
-    plt.fill_between(range(FUZZ_BUDGET)[0::100], all_size_bb_mean+all_size_bb_std, all_size_bb_mean-all_size_bb_std, facecolor='red', alpha=0.5)
+    plt.plot(range(FUZZ_BUDGET)[0::200], all_size_bb_mean, lw=2, label='Bbox Fuzzing', color='red')
+    plt.fill_between(range(FUZZ_BUDGET)[0::200], all_size_bb_mean+all_size_bb_std, all_size_bb_mean-all_size_bb_std, facecolor='red', alpha=0.5)
+    
+    #plt.plot(range(FUZZ_BUDGET)[0::400], all_size_gbns_mean, lw=2, label='GBox NoSP Fuzzing', color='green')
+    #plt.fill_between(range(FUZZ_BUDGET)[0::400], all_size_gbns_mean+all_size_gbns_std, all_size_gbns_mean-all_size_gbns_std, facecolor='green', alpha=0.5)
+
 
     plt.xlabel("Time (sec)")
     plt.ylabel("Pool Size")
     plt.legend(loc="upper left")
 
-    plt.savefig("results/rq3_poolsize_overtime_cloud_timebdgt_%d.pdf" % (FUZZ_BUDGET) )
+    plt.savefig("results/%s_rq3_poolsize_overtime_cloud_timebdgt_%d.pdf" % (env_idn, FUZZ_BUDGET) )
 
 def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
 
@@ -106,16 +134,19 @@ def sub_rq3_warn(pools):
     
     return all_warns_over_time
 
-def plot_rq3_warn(agent_id, pools_g, pools_b):
-    
+def plot_rq3_warn(env_idn, pools_g, pools_b):  # , pools_gns):
+
     all_warns_over_time_g = sub_rq3_warn(pools_g)
     all_warns_over_time_b = sub_rq3_warn(pools_b)
+    #all_warns_over_time_gns = sub_rq3_warn(pools_gns)
 
     a_w_o_t_g_mean = np.array(all_warns_over_time_g).mean(axis=0)
     a_w_o_t_b_mean = np.array(all_warns_over_time_b).mean(axis=0)
+    #a_w_o_t_gns_mean = np.array(all_warns_over_time_gns).mean(axis=0)
 
     a_w_o_t_g_std = np.array(all_warns_over_time_g).std(axis=0)
     a_w_o_t_b_std = np.array(all_warns_over_time_b).std(axis=0)
+    #a_w_o_t_gns_std = np.array(all_warns_over_time_gns).std(axis=0)
     
     '''
     for wot in all_warns_over_time_g:
@@ -125,17 +156,20 @@ def plot_rq3_warn(agent_id, pools_g, pools_b):
         plt.plot(range(POOL_BUDGET), wot, "--", lw=2)
     '''
 
-    plt.plot(range(FUZZ_BUDGET), a_w_o_t_g_mean, lw=2, label='graybox', color='blue')
+    plt.plot(range(FUZZ_BUDGET), a_w_o_t_g_mean, lw=2, label='Gbox Fuzzing', color='blue')
     plt.fill_between(range(FUZZ_BUDGET), a_w_o_t_g_mean+a_w_o_t_g_std, a_w_o_t_g_mean-a_w_o_t_g_std, facecolor='blue', alpha=0.5)
     
-    plt.plot(range(FUZZ_BUDGET), a_w_o_t_b_mean, lw=2, label='blackbox', color='red')
+    plt.plot(range(FUZZ_BUDGET), a_w_o_t_b_mean, lw=2, label='Bbox Fuzzing', color='red')
     plt.fill_between(range(FUZZ_BUDGET), a_w_o_t_b_mean+a_w_o_t_b_std, a_w_o_t_b_mean-a_w_o_t_b_std, facecolor='red', alpha=0.5)
 
+    #plt.plot(range(FUZZ_BUDGET), a_w_o_t_gns_mean, lw=2, label='Gbox NoSP Fuzzing', color='green')
+    #plt.fill_between(range(FUZZ_BUDGET), a_w_o_t_gns_mean+a_w_o_t_gns_std, a_w_o_t_gns_mean-a_w_o_t_gns_std, facecolor='green', alpha=0.5)
+
     plt.xlabel("Time(sec)")
-    plt.ylabel("# Warnings")
+    plt.ylabel("# Buggy Seeds")
     plt.legend(loc="upper left")
 
-    plt.savefig("results/rq3_warnovertime_mustd_timebdgt_%d_%s.pdf" % (FUZZ_BUDGET, agent_id) )
+    plt.savefig("results/%s_rq3_warnovertime_timebdgt_%d.pdf" % (env_idn, FUZZ_BUDGET) )
 
 
 def plot_rq3_trial(pool_pop_summ, pool):
