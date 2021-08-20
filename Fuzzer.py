@@ -42,7 +42,7 @@ class Fuzzer:
             trial += 1
             rnd = self.rng.random()
 
-            if self.fuzz_type == "gbox" and rnd < 0.7:
+            if self.fuzz_type == "gbox" and rnd < 0.8:
                 seed = self.schedule.choose(self.pool, self.rng)
             else:
                 self.game.env.reset()  # rng=self.rng)
@@ -73,10 +73,9 @@ class Fuzzer:
 
             if cand_nn is not None and self.is_interesting(cand_nn):
                 cur_time = time.perf_counter()-start_time
-                logger.info("New seed found at %s. Pool size: %d." % (str(cur_time), len(self.pool)))
                 self.pool.append(Seed(cand_nn, cand_hi_lvl, trial, cur_time))
-
-            population_summary.append([trial, time.perf_counter()-start_time, len(self.pool)])
+                logger.info("New seed found at %s. Pool size: %d." % (str(cur_time), len(self.pool)))
+                population_summary.append([trial, cur_time, len(self.pool)])
 
         logger.info("Pool Budget: %d, Size of the Pool: %d" % (FUZZ_BUDGET, len(self.pool)))
 

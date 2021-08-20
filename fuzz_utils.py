@@ -19,10 +19,9 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb):  #, pool_p
         size_gb = []
         pp = np.array(pp)
         times = pp[:, 1]
-        lptr = 0
-        for sec in range(FUZZ_BUDGET)[0::200]:
+        for sec in range(FUZZ_BUDGET):
             cnt = 0
-            for tm in times[lptr:]:
+            for tm in times:
                 if tm > sec:
                     break
                 cnt += 1
@@ -31,7 +30,6 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb):  #, pool_p
             else:
                 size_gb.append(pp[:, 2][cnt-1])
 
-            lptr = cnt
         all_size_gb.append(size_gb)
 
     all_size_bb = []
@@ -40,10 +38,10 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb):  #, pool_p
         size_bb = []
         pp = np.array(pp)
         times = pp[:, 1]
-        lptr = 0
-        for sec in range(FUZZ_BUDGET)[0::200]:
+        # lptr = 0
+        for sec in range(FUZZ_BUDGET):
             cnt = 0
-            for tm in times[lptr:]:
+            for tm in times:
                 if tm > sec:
                     break
                 cnt += 1
@@ -52,7 +50,7 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb):  #, pool_p
             else:
                 size_bb.append(pp[:, 2][cnt-1])
 
-            lptr = cnt
+            # lptr = cnt
         all_size_bb.append(size_bb)
 
     '''
@@ -86,12 +84,11 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb):  #, pool_p
     all_size_bb_std = np.array(all_size_bb).std(axis=0)
     #all_size_gbns_std = np.array(all_size_gbns).std(axis=0)
 
+    plt.plot(range(FUZZ_BUDGET), all_size_gb_mean, lw=2, label='Gbox Fuzzing', color='blue')
+    plt.fill_between(range(FUZZ_BUDGET), all_size_gb_mean+all_size_gb_std, all_size_gb_mean-all_size_gb_std, facecolor='blue', alpha=0.5)
 
-    plt.plot(range(FUZZ_BUDGET)[0::200], all_size_gb_mean, lw=2, label='Gbox Fuzzing', color='blue')
-    plt.fill_between(range(FUZZ_BUDGET)[0::200], all_size_gb_mean+all_size_gb_std, all_size_gb_mean-all_size_gb_std, facecolor='blue', alpha=0.5)
-
-    plt.plot(range(FUZZ_BUDGET)[0::200], all_size_bb_mean, lw=2, label='Bbox Fuzzing', color='red')
-    plt.fill_between(range(FUZZ_BUDGET)[0::200], all_size_bb_mean+all_size_bb_std, all_size_bb_mean-all_size_bb_std, facecolor='red', alpha=0.5)
+    plt.plot(range(FUZZ_BUDGET), all_size_bb_mean, lw=2, label='Bbox Fuzzing', color='red')
+    plt.fill_between(range(FUZZ_BUDGET), all_size_bb_mean+all_size_bb_std, all_size_bb_mean-all_size_bb_std, facecolor='red', alpha=0.5)
     
     #plt.plot(range(FUZZ_BUDGET)[0::400], all_size_gbns_mean, lw=2, label='GBox NoSP Fuzzing', color='green')
     #plt.fill_between(range(FUZZ_BUDGET)[0::400], all_size_gbns_mean+all_size_gbns_std, all_size_gbns_mean-all_size_gbns_std, facecolor='green', alpha=0.5)

@@ -12,13 +12,11 @@ class SeedPolicyMutator(Mutator):
         self.fuzz_mut_bdgt = fuzz_mut_bdgt
 
     def mutate(self, seed, rng):
-        # mut_magnitude = rng.integers(POOL_POP_MUT)
-
         self.wrapper.set_state(seed.hi_lvl_state)
         nn_state, hi_lvl_state = self.wrapper.get_state()
-
+        mut_bdgt = rng.integers(self.fuzz_mut_bdgt)
         next_state = nn_state
-        for _ in range(self.fuzz_mut_bdgt):
+        for _ in range(mut_bdgt):
             act = self.wrapper.model_step(next_state, deterministic=False)  # Stochastic
             _, next_state, done = self.wrapper.env_step(act)
             if done:
@@ -34,8 +32,8 @@ class RandomActionMutator(Mutator):
 
     def mutate(self, seed, rng):
         self.wrapper.set_state(seed.hi_lvl_state)
-
-        for _ in range(self.fuzz_mut_bdgt):
+        mut_bdgt = rng.integers(self.fuzz_mut_bdgt)
+        for _ in range(mut_bdgt):
             if self.wrapper.env_iden == "bipedal":
                 act = rng.uniform(-1, 1, (4))
             else:

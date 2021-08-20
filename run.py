@@ -27,8 +27,10 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, use_seedp=use_seedp, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
     pop_summ = fuzzer.fuzz()
 
+
+    print("Pool size:", len(fuzzer.pool))
     #pickle.dump([fuzzer.pool, pop_summ], open("%s_%s_%d_%s_nosp_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time), "wb"))
-    print("Pool size nosp:", len(fuzzer.pool))
+    # exit()
     
     rep_line = 0
     # for ap in agent_paths:
@@ -43,11 +45,15 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
 
     # game.create_linetrack_model(load_path=ap, r_seed=r_id)
 
+    total_time = 0
     tot_num_rejects = 0
     warnings_mm_e = []
     warnings_mm_h = []
     for idx, fuzz_seed in enumerate(fuzzer.pool):
+        s = time.time()
         num_warn_mm_e, num_warn_mm_h, num_rejects = mm_oracle.explore(fuzz_seed)
+        e = time.time()
+        total_time += (e-s)
         num_warn_mm_tot = num_warn_mm_e + num_warn_mm_h
 
         fuzz_seed.num_warn_mm_hard = num_warn_mm_h
@@ -59,6 +65,7 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
         tot_num_rejects += num_rejects
         logger.info("Metamorphic Oracle has found %d(E) + %d(H) = %d warnings in seed %d. Num rejects: %d." % (num_warn_mm_e, num_warn_mm_h, num_warn_mm_tot, idx, num_rejects))
 
+    avg_time = total_time / len(fuzzer.pool)
     _, tot_warns_mm_e, _ = post_fuzz_analysis(warnings_mm_e)
     _, tot_warns_mm_h, _ = post_fuzz_analysis(warnings_mm_h)
 
@@ -78,8 +85,8 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     num_cycles = fuzzer.schedule.cycles
     total_trials = fuzzer.total_trials
 
-    print(len(pop_summ), len(fuzzer.pool), tot_warns_mm_e, tot_warns_mm_h, num_cycles, total_trial)
-    return pop_summ, fuzzer.pool, tot_warns_mm_e, tot_warns_mm_h, num_cycles, total_trials
+    print(len(pop_summ), len(fuzzer.pool), tot_warns_mm_e, tot_warns_mm_h, num_cycles, total_trials, total_time, avg_time)
+    return pop_summ, fuzzer.pool, tot_warns_mm_e, tot_warns_mm_h, num_cycles, total_trials, total_time, avg_time
 
 
 fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
