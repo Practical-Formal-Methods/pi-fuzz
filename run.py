@@ -8,7 +8,7 @@ import Fuzzer
 from fuzz_utils import post_fuzz_analysis, setup_logger
 
 
-def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, coverage_thold, r_seed, fuzz_mut_bdgt, orcl_mut_bdgt, use_seedp, delta):
+def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, coverage_thold, r_seed, fuzz_mut_bdgt, orcl_mut_bdgt, sp_prob, delta):
 
     workbook = xlsxwriter.Workbook('logs_/out_%s_dedup_%s.xlsx' % (fuzz_start_time, fuzz_type))
     worksheet = workbook.add_worksheet()
@@ -24,13 +24,13 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     logger.info("Fuzzing starts.")
     logger.info("=" * 30)
 
-    fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, use_seedp=use_seedp, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
+    fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, sp_prob=sp_prob, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
     pop_summ = fuzzer.fuzz()
 
 
     print("Pool size:", len(fuzzer.pool))
-    #pickle.dump([fuzzer.pool, pop_summ], open("%s_%s_%d_%s_nosp_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time), "wb"))
-    # exit()
+    #pickle.dump([pop_summ, fuzzer.pool], open("%s_%s_%d_%s_nosp_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time), "wb"))
+    #exit()
     
     rep_line = 0
     # for ap in agent_paths:
@@ -104,7 +104,7 @@ parser.add_argument("-L", "--logfile", default="logs_/policy_testing_%s.log" % f
 parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and ipedal
 parser.add_argument("-OMB", "--orcl_mut_bdgt", default=25, type=int)
 parser.add_argument("-D", "--delta", default=1.0, type=float)
-parser.add_argument("-USP", "--use_sp", action='store_true', default=False)
+parser.add_argument("-SPP", "--sp_probability", default=0.1, type=float)
 
 args = parser.parse_args()
 
@@ -120,7 +120,7 @@ fuzz_mut_bdgt = args.fuzz_mut_bdgt
 orcl_mut_bdgt = args.orcl_mut_bdgt
 logfilename = args.logfile
 delta = args.delta
-use_seedp = args.use_sp
+sp_prob = args.sp_probability
 
 loggername = "fuzz_logger"
 
@@ -134,8 +134,8 @@ logger.info("Bug Type: %s", bug_type)
 logger.info("Coverage Type: %s", coverage)
 logger.info("Oracle Type: %s", oracle_type)
 
-test_out = test_policy(env_iden, fuzz_type, agent_path, bug_type, coverage, coverage_thold, rand_seed, fuzz_mut_bdgt, orcl_mut_bdgt, use_seedp, delta)
-pickle.dump(test_out, open("%s_%s_%d_%s.p"%(env_iden, fuzz_type, rand_seed, fuzz_start_time), "wb"))
+test_out = test_policy(env_iden, fuzz_type, agent_path, bug_type, coverage, coverage_thold, rand_seed, fuzz_mut_bdgt, orcl_mut_bdgt, sp_prob, delta)
+pickle.dump(test_out, open("%s_%s_%d_%s_sp%f.p"%(env_iden, fuzz_type, rand_seed, fuzz_start_time, sp_prob), "wb"))
 
 # -E linetrack -R 123 -A final_policies/linetrack_org.pth -F gbox -CT 5.0 -FMB 3 -OMB 1
 # -E lunar -R 123 -A final_policies/lunar_org -F gbox -CT 0.75 -FMB 25 -OMB 25

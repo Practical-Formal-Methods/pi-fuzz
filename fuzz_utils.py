@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from sklearn.neighbors import NearestNeighbors
 from fuzz_config import FUZZ_BUDGET
 
-def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb):  #, pool_pop_summ_gbns):
+def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb, pool_pop_summ_gbns):
 
     all_size_gb = []
     for pp in pool_pop_summ_gb:
@@ -53,17 +53,15 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb):  #, pool_p
             # lptr = cnt
         all_size_bb.append(size_bb)
 
-    '''
     all_size_gbns = []
     for pp in pool_pop_summ_gbns:
         print("yep3")
         size_bb = []
         pp = np.array(pp)
         times = pp[:, 1]
-        lptr = 0
-        for sec in range(FUZZ_BUDGET)[0::400]:
+        for sec in range(FUZZ_BUDGET):
             cnt = 0
-            for tm in times[lptr:]:
+            for tm in times:
                 if tm > sec:
                     break
                 cnt += 1
@@ -72,26 +70,24 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ_gb, pool_pop_summ_bb):  #, pool_p
             else:
                 size_bb.append(pp[:, 2][cnt-1])
 
-            lptr = cnt
         all_size_gbns.append(size_bb)
-    '''
 
     all_size_gb_mean = np.array(all_size_gb).mean(axis=0)
     all_size_bb_mean = np.array(all_size_bb).mean(axis=0)
-    #all_size_gbns_mean = np.array(all_size_gbns).mean(axis=0)
+    all_size_gbns_mean = np.array(all_size_gbns).mean(axis=0)
 
     all_size_gb_std = np.array(all_size_gb).std(axis=0)
     all_size_bb_std = np.array(all_size_bb).std(axis=0)
-    #all_size_gbns_std = np.array(all_size_gbns).std(axis=0)
+    all_size_gbns_std = np.array(all_size_gbns).std(axis=0)
 
-    plt.plot(range(FUZZ_BUDGET), all_size_gb_mean, lw=2, label='Gbox Fuzzing', color='blue')
+    plt.plot(range(FUZZ_BUDGET), all_size_gb_mean, lw=2, label='Gbox InfP01', color='blue')
     plt.fill_between(range(FUZZ_BUDGET), all_size_gb_mean+all_size_gb_std, all_size_gb_mean-all_size_gb_std, facecolor='blue', alpha=0.5)
 
-    plt.plot(range(FUZZ_BUDGET), all_size_bb_mean, lw=2, label='Bbox Fuzzing', color='red')
+    plt.plot(range(FUZZ_BUDGET), all_size_bb_mean, lw=2, label='Gbox InfP05', color='red')
     plt.fill_between(range(FUZZ_BUDGET), all_size_bb_mean+all_size_bb_std, all_size_bb_mean-all_size_bb_std, facecolor='red', alpha=0.5)
     
-    #plt.plot(range(FUZZ_BUDGET)[0::400], all_size_gbns_mean, lw=2, label='GBox NoSP Fuzzing', color='green')
-    #plt.fill_between(range(FUZZ_BUDGET)[0::400], all_size_gbns_mean+all_size_gbns_std, all_size_gbns_mean-all_size_gbns_std, facecolor='green', alpha=0.5)
+    plt.plot(range(FUZZ_BUDGET), all_size_gbns_mean, lw=2, label='GBox NoInfP', color='green')
+    plt.fill_between(range(FUZZ_BUDGET), all_size_gbns_mean+all_size_gbns_std, all_size_gbns_mean-all_size_gbns_std, facecolor='green', alpha=0.5)
 
 
     plt.xlabel("Time (sec)")
