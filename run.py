@@ -29,7 +29,7 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
 
 
     print("Pool size:", len(fuzzer.pool))
-    #pickle.dump([pop_summ, fuzzer.pool], open("%s_%s_%d_%s_nosp_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time), "wb"))
+    #pickle.dump([pop_summ, fuzzer.pool, fuzzer.total_trials], open("%s_%s_%d_%s_sp%f_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time, sp_prob), "wb"))
     #exit()
     
     rep_line = 0
