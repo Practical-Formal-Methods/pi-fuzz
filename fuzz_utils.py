@@ -433,13 +433,32 @@ def read_outs_excel(folder=None, fuzz_type="gbox"):
                 warns = sub_df["#easy_warns"].to_numpy()
                 all_warns[idx] += list(warns)
 
-    boxplot("all_agents", fuzz_type, bug_type, all_warns)
+    boxplot("all_agents", fuzz_type, all_warns)
 
 def boxplot(env_idn, fuzz_types, num_tot_warn):
     green_diamond = dict(markerfacecolor="g", marker="D")
-    fig, ax = plt.subplots()
-    ax.set_ylabel("# Warnings")
-    ax.set_xlabel("Agent Quality (Higher Better)")
-    ax.boxplot(num_tot_warn, flierprops=green_diamond)
+    # fig, ax = plt.subplots()
+    plt.figure(figsize=(12, 9))
+    ax = plt.subplot(111)
+
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+
+    plt.xlabel("Fuzz Type", fontsize=14)
+    plt.ylabel("# Warnings", fontsize=14)
+    bplot = ax.boxplot(num_tot_warn, flierprops=green_diamond, patch_artist=True)
     ax.set_xticklabels(fuzz_types)
-    plt.savefig("num_warn_boxplot_%s.pdf" % (env_idn))
+
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
+    linestyles = ["-", "-", "-", "--", "--", "--"]
+    for patch, color, ls in zip(bplot['boxes'], colors, linestyles):
+        patch.set_facecolor(color)
+        patch.set_linestyle(ls)
+
+    for element in ['whiskers', 'fliers', 'means', 'medians', 'caps']:
+        plt.setp(bplot[element], color="black", lw=2)
+    plt.setp(bplot["boxes"], lw=2)
+    plt.savefig("num_warn_boxplot_%s.pdf" % (env_idn), bbox_inches="tight")
+
