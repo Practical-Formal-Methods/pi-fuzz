@@ -83,33 +83,44 @@ def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
     plt.savefig("rq3_poolovertime_timebdgt" + str(FUZZ_BUDGET) + ".pdf")
 
 
-def sub_rq3_warn(pools):
+def sub_rq3_warn(pools, mode="num_seeds"):
     all_warn_seed_times = []
+    all_num_warns = []
     for pool in pools:
+        num_warns = []
         warn_seed_times = []
         for seed in pool:
             if seed.num_warn_mm_hard or seed.num_warn_mm_easy:
                 warn_seed_times.append(seed.gen_time)
+                num_warns.append(seed.num_warn_mm_hard + seed.num_warn_mm_easy)
         all_warn_seed_times.append(warn_seed_times)
+        all_num_warns.append(num_warns)
 
     all_warns_over_time = []
-    for ws_times in all_warn_seed_times:
+    for num_warns, ws_times in zip(all_num_warns, all_warn_seed_times):
         warn_over_time = []
         for sec in range(FUZZ_BUDGET):
-            warn_over_time.append(sum(wst < sec for wst in ws_times))
+            if mode == "num_seeds":
+                warn_over_time.append(sum(wst < sec for wst in ws_times))
+            elif mode == "num_bugs":
+                tot_w = 0
+                for nw, wst in zip(num_warns, ws_times):
+                    if wst < sec:
+                        tot_w += nw
+                warn_over_time.append(tot_w)
         all_warns_over_time.append(warn_over_time)
     
     return all_warns_over_time
 
 
-def plot_rq3_warn(env_idn, pools):  # pools_g, pools_b, pools_gns):
+def plot_rq3_warn(env_idn, pools, mode="num_seeds"):  # pools_g, pools_b, pools_gns):
 
     max_size=0
     all_warns_over_time = []
     all_warns_over_time_mean = []
     all_warns_over_time_std = []
     for pool in pools:
-        warns_over_time = sub_rq3_warn(pool)
+        warns_over_time = sub_rq3_warn(pool, mode)
         all_warns_over_time.append(warns_over_time)
         all_warns_over_time_mean.append(np.array(warns_over_time).mean(axis=0))
         all_warns_over_time_std.append(np.array(warns_over_time).std(axis=0))
@@ -340,22 +351,6 @@ def plot_entropy(entropies):
     plt.show()
 
 
-# LEGACY
-# def mutate_seed_selection(scheduler, pool, org_pol_len, explored_seeds):
-#     seed = scheduler.choose(pool)
-#     new_seed_data = seed.data
-#     trial = 0
-#     while new_seed_data in explored_seeds:
-#         new_seed_data += random.normalvariate(MUTATE_MU, MUTATE_SIGMA)
-#         if new_seed_data < 0: new_seed_data = -new_seed_data
-#         if new_seed_data > (org_pol_len - 1): new_seed_data = org_pol_len - 1
-#         new_seed_data = int(new_seed_data)
-#         trial += 1
-#         if trial >= 10: random_seed_selection(org_pol_len, explored_seeds)
-#
-#     return seed, new_seed_data
-
-
 def entropy_seed_selection(org_pol_len, entropies, explored_seeds):
     choice_list = [d for d in range(org_pol_len) if d not in explored_seeds]
     choice_entr = [entropies[d] for d in choice_list]
@@ -413,7 +408,7 @@ def read_outs_excel(folder=None, fuzz_type="gbox"):
 def boxplot(env_idn, fuzz_types, num_tot_warn):
     green_diamond = dict(markerfacecolor="g", marker="D")
     # fig, ax = plt.subplots()
-    plt.figure(figsize=(12, 9))
+    plt.figure(figsize=(10, 7.5))
     ax = plt.subplot(111)
 
     ax.get_xaxis().tick_bottom()
@@ -437,3 +432,64 @@ def boxplot(env_idn, fuzz_types, num_tot_warn):
     plt.setp(bplot["boxes"], lw=2)
     plt.savefig("num_warn_boxplot_%s.pdf" % (env_idn), bbox_inches="tight")
 
+
+
+
+
+
+
+def plot_training_curves():
+    bipedal_rewards = []
+    with open("final_policies/bipedal_monitor.csv", "r") as fr:
+        lines = fr.readlines()
+        for line in lines[2:]:
+            bipedal_rewards.append(float(line.split(",")[0]))
+
+    lunar_rewards = []
+    with open("final_policies/lunar_monitor.csv", "r") as fr:
+        lines = fr.readlines()
+        for line in lines[2:]:
+            lunar_rewards.append(float(line.split(",")[0]))
+
+    linetrack_rewards = []
+    with open("final_policies/linetrack_monitor.csv", "r") as fr:
+        lines = fr.readlines()
+        for line in lines:
+            if line == "\n": continue
+            linetrack_rewards.append(float(line.split("\t")[1].split(" ")[2]))
+
+    data = [bipedal_rewards, lunar_rewards, linetrack_rewards]
+    labels = ["BipedalWalker", "LunarLander", "Linetrack"]
+    colors = ["#3a82b5", "#3a82b5", "#3a82b5"]
+    # colors = ["#393bbd", "#c41b1b", "#32e6e6"]
+
+    plt.figure(figsize=(12, 15))
+    fig, (ax0, ax1, ax2) = plt.subplots(3, figsize=(11,11))
+    axes = [ax0, ax1, ax2]
+    for ax, clr, lbl, dt in zip(axes, colors, labels, data):
+        ax.get_xaxis().tick_bottom()
+        ax.get_yaxis().tick_left()
+        ax.set_title(lbl, fontsize=15)
+        ax.plot(dt, ls="-", lw=2, label=lbl, color=clr)
+
+    plt.xlabel("Iteration", fontsize=18)
+    ax1.set_ylabel("Rewards", fontsize=18)
+    plt.savefig("training_curves.pdf", bbox_inches="tight")
+
+    # plt.legend(loc="upper left", fontsize=12)
+
+
+# LEGACY
+# def mutate_seed_selection(scheduler, pool, org_pol_len, explored_seeds):
+#     seed = scheduler.choose(pool)
+#     new_seed_data = seed.data
+#     trial = 0
+#     while new_seed_data in explored_seeds:
+#         new_seed_data += random.normalvariate(MUTATE_MU, MUTATE_SIGMA)
+#         if new_seed_data < 0: new_seed_data = -new_seed_data
+#         if new_seed_data > (org_pol_len - 1): new_seed_data = org_pol_len - 1
+#         new_seed_data = int(new_seed_data)
+#         trial += 1
+#         if trial >= 10: random_seed_selection(org_pol_len, explored_seeds)
+#
+#     return seed, new_seed_data
