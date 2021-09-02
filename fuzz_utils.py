@@ -42,7 +42,7 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ):  #   pool_pop_summ_gb, pool_pop
         all_size_mean.append(np.array(all_sizes).mean(axis=0))
         all_size_std.append(np.array(all_sizes).std(axis=0)) 
 
-    plt.figure(figsize=(12, 9))
+    plt.figure(figsize=(10, 7.5))
     ax = plt.subplot(111)
     #ax.spines["top"].set_visible(False)
     #ax.spines["right"].set_visible(False)
@@ -62,12 +62,12 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ):  #   pool_pop_summ_gb, pool_pop
     colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"] 
     linestyles = ["-", "-", "-", "--", "--", "--"]
     for ls, clr, lbl, asm, ass in zip(linestyles, colors, labels, all_size_mean, all_size_std):
-        plt.plot(range(FUZZ_BUDGET), asm, ls=ls, lw=2, label=lbl, color=clr)
-        plt.fill_between(range(FUZZ_BUDGET), asm+ass, asm-ass, color=clr, alpha=0.7)
+        plt.plot(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], asm[0:FUZZ_BUDGET:60], ls=ls, lw=2, label=lbl, color=clr)
+        plt.fill_between(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], asm[0:FUZZ_BUDGET:60]+ass[0:FUZZ_BUDGET:60], asm[0:FUZZ_BUDGET:60]-ass[0:FUZZ_BUDGET:60], color=clr, alpha=0.7)
 
     plt.legend(loc="upper left", fontsize=12)
 
-    plt.savefig("%s_rq3_poolsize_overtime_cloud_timebdgt_%d.pdf" % (env_idn, FUZZ_BUDGET), bbox_inches="tight")
+    plt.savefig("%s_poolsize_%d.pdf" % (env_idn, FUZZ_BUDGET), bbox_inches="tight")
 
 
 def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
@@ -117,7 +117,7 @@ def plot_rq3_warn(env_idn, pools):  # pools_g, pools_b, pools_gns):
         if len(pool) > max_size:
             max_size = len(pool)
 
-    plt.figure(figsize=(12, 9))
+    plt.figure(figsize=(10, 7.5))
     ax = plt.subplot(111)
 
     ax.get_xaxis().tick_bottom()
@@ -133,11 +133,11 @@ def plot_rq3_warn(env_idn, pools):  # pools_g, pools_b, pools_gns):
     colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"] 
     linestyles = ["-", "-", "-", "--", "--", "--"]
     for ls, clr, lbl, awm, aws in zip(linestyles, colors, labels, all_warns_over_time_mean, all_warns_over_time_std):
-        plt.plot(range(FUZZ_BUDGET), awm, ls=ls, lw=2, label=lbl, color=clr)
-        plt.fill_between(range(FUZZ_BUDGET), awm+aws, awm-aws, color=clr, alpha=0.7)
+        plt.plot(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60], ls=ls, lw=2, label=lbl, color=clr)
+        plt.fill_between(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]+aws[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]-aws[0:FUZZ_BUDGET:60], color=clr, alpha=0.7)
 
     plt.legend(loc="upper left", fontsize=12)
-    plt.savefig("test_%s_rq3_warnovertime_timebdgt_%d.pdf" % (env_idn, FUZZ_BUDGET), bbox_inches="tight")
+    plt.savefig("%s_warn_overtime_%d.pdf" % (env_idn, FUZZ_BUDGET), bbox_inches="tight")
 
 
 def plot_rq3_trial(pool_pop_summ, pool):
