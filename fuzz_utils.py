@@ -138,7 +138,11 @@ def plot_rq3_warn(env_idn, pools, mode="num_seeds"):  # pools_g, pools_b, pools_
     #plt.yticks(range(0, max_size, 100), fontsize=12)
 
     plt.xlabel("Time (sec)", fontsize=14)
-    plt.ylabel("#Seeds Found Warn.", fontsize=14)
+    if mode == "num_seeds":
+        plt.ylabel("#Seeds Found Warn.", fontsize=14)
+    elif mode == "num_bugs":
+        plt.ylabel("#Warnings", fontsize=14)
+
 
     labels = ["Gbox InfP=0.2", "Gbox InfP=0.1", "Gbox InfP=0", "Bbox InfP=0.2", "Bbox InfP=0.1", "Bbox InfP=0"]
     colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"] 
@@ -148,7 +152,7 @@ def plot_rq3_warn(env_idn, pools, mode="num_seeds"):  # pools_g, pools_b, pools_
         plt.fill_between(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]+aws[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]-aws[0:FUZZ_BUDGET:60], color=clr, alpha=0.7)
 
     plt.legend(loc="upper left", fontsize=12)
-    plt.savefig("%s_warn_overtime_%d.pdf" % (env_idn, FUZZ_BUDGET), bbox_inches="tight")
+    plt.savefig("%s_warn_overtime_%d_%s.pdf" % (env_idn, FUZZ_BUDGET, mode), bbox_inches="tight")
 
 
 def plot_rq3_trial(pool_pop_summ, pool):
