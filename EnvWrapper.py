@@ -126,8 +126,11 @@ class Wrapper():
         next_state = init_state
         full_play = []
         all_rews = []
+        visited_states = []
         total_reward = 0
         while True:
+            _, hls = self.get_state()
+            visited_states.append(hls)
             act = self.model_step(next_state)
             reward, next_state, done = self.env_step(act)
             if render:
@@ -148,7 +151,7 @@ class Wrapper():
                     else:
                         total_reward = 100  # walker reached end
                     # total_reward = int(total_reward > 0) * 100  # if no crash 100 else 0
-                return total_reward, full_play
+                return total_reward, full_play, visited_states
 
     # @profile
     def run_env_fuzz(self, seed=None):  # environment fuzzer
