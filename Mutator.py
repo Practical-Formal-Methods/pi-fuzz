@@ -163,7 +163,11 @@ class BipedalEasyOracleMutator(Mutator):
             mut_terrain_y.append(y)
 
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
-        hi_lvl_state[-2] = mut_terrain_y
+        if len(hi_lvl_state) == 17:
+            hi_lvl_state[-5] = mut_terrain_y
+        elif len(hi_lvl_state) == 14:
+            hi_lvl_state[-2] = mut_terrain_y
+
 
         return hi_lvl_state
 
