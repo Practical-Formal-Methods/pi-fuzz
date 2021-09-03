@@ -148,11 +148,11 @@ class BipedalEasyOracleMutator(Mutator):
         velocity = 0.0
 
         if mode == "easy":
-            vel_coeff = 0.6
-            rough_coeff = 1
+            vel_coeff = 0.7
+            rough_coeff = 0.8
         else:
             vel_coeff = 0.9
-            rough_coeff = 1
+            rough_coeff = 1.2
 
         mut_terrain_y = []
         for i in range(TERRAIN_LENGTH):
