@@ -67,10 +67,10 @@ class MetamorphicOracle(Oracle):
                 nn_state, _ = self.game.get_state()
 
                 mut_reward, _ = self.game.run_pol_fuzz(nn_state, self.mode)
-                if self.de_dup and list(nn_state) in bug_states: continue
+                if self.de_dup and list(mut_state) in bug_states: continue
                 if agent_reward - mut_reward > self.delta:
                     num_warning_easy += 1
-                    bug_states.append(list(nn_state))
+                    bug_states.append(list(mut_state))
 
             # make map HARDER
             else:
@@ -83,10 +83,10 @@ class MetamorphicOracle(Oracle):
                 nn_state, _ = self.game.get_state()
 
                 mut_reward, _ = self.game.run_pol_fuzz(nn_state, mode=self.mode)
-                if self.de_dup and list(nn_state) in bug_states: continue
+                if self.de_dup and list(mut_state) in bug_states: continue
                 if mut_reward - agent_reward > self.delta:
                     num_warning_hard = 1
-                    bug_states.append(list(nn_state))
+                    bug_states.append(list(mut_state))
 
         return num_warning_easy, num_warning_hard, num_rejects
 
