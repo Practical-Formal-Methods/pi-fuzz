@@ -11,14 +11,14 @@ from fuzz_config import FUZZ_BUDGET
 logger = logging.getLogger('fuzz_logger')
 
 class Fuzzer:
-    def __init__(self, r_seed, fuzz_type, fuzz_game, sp_prob, coverage, coverage_thold, mut_budget):
+    def __init__(self, r_seed, fuzz_type, fuzz_game, inf_prob, coverage, coverage_thold, mut_budget):
 
         self.rng = np.random.default_rng(r_seed)
         self.fuzz_type = fuzz_type
         self.game = fuzz_game
         self.cov_type = coverage
         self.cov_thold = coverage_thold
-        self.sp_prob = sp_prob
+        self.inf_prob = inf_prob
 
         self.pool = []
         self.epochs = 0
@@ -42,7 +42,7 @@ class Fuzzer:
             trial += 1
             rnd = self.rng.random()
 
-            if self.fuzz_type == "gbox" and rnd < 0.8:
+            if self.fuzz_type == "inc" and rnd < 0.8:
                 seed = self.schedule.choose(self.pool, self.rng)
             else:
                 self.game.env.reset()  # rng=self.rng)
@@ -50,7 +50,7 @@ class Fuzzer:
                 seed = Seed(cand_nn, cand_hi_lvl, trial, time.perf_counter()-start_time)
 
             rnd = self.rng.random()
-            if rnd < self.sp_prob:
+            if rnd < self.inf_prob:
                 cand_nn, cand_hi_lvl = self.seed_policy_mutator.mutate(seed, self.rng)
             else:
                 cand_nn, cand_hi_lvl = self.random_action_mutator.mutate(seed, self.rng)

@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from fuzz_config import FUZZ_BUDGET
 
-def plot_rq3_time_cloud(env_idn, pool_pop_summ):  #   pool_pop_summ_gb, pool_pop_summ_bb, pool_pop_summ_gbns):
+def plot_rq3_time_cloud(env_idn, pool_pop_summ):
 
     all_size_mean = []
     all_size_std = []

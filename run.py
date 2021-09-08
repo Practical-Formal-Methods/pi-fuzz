@@ -1,19 +1,13 @@
 import time
 import pickle
 import argparse
-import xlsxwriter
 import Oracle
 import EnvWrapper as EW
 import Fuzzer
 from fuzz_utils import post_fuzz_analysis, setup_logger
 
 
-def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, coverage_thold, r_seed, fuzz_mut_bdgt, orcl_mut_bdgt, sp_prob, delta):
-
-    workbook = xlsxwriter.Workbook('logs/out_%s_%s.xlsx' % (fuzz_start_time, fuzz_type))
-    worksheet = workbook.add_worksheet()
-    header = ["random_seed", "bug_type", "coverage", "agent_name", "#easy_warns", "#hard_warns"]
-    worksheet.write_row(0, 0, header)
+def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, coverage_thold, r_seed, fuzz_mut_bdgt, orcl_mut_bdgt, inf_prob, delta):
 
     game = EW.Wrapper(env_identifier)
     game.create_environment(env_seed=r_seed)
@@ -24,15 +18,14 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     logger.info("Fuzzing starts.")
     logger.info("=" * 30)
 
-    fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, sp_prob=sp_prob, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
+    fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, inf_prob=inf_prob, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
     pop_summ = fuzzer.fuzz()
 
 
     print("Pool size:", len(fuzzer.pool))
-    pickle.dump([pop_summ, fuzzer.pool, fuzzer.total_trials], open("%s_%s_%d_%s_sp%f_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time, sp_prob), "wb"))
+    pickle.dump([pop_summ, fuzzer.pool, fuzzer.total_trials], open("%s_%s_%d_%s_sp%f_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time, inf_prob), "wb"))
     
     rep_line = 0
-    # for ap in agent_paths:
     rep_line += 1
     pname = agent_path.split("/")[-1].split(".")[0]
     logger.info("\n\n")
@@ -70,14 +63,9 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     logger.info("Total number of warnings (H) in this fuzz run: %d" % tot_warns_mm_h)
     logger.info("Total number of rejected Oracle mutations in this fuzz run: %d" % tot_num_rejects)
 
-    report = [r_seed, bug_type, coverage, pname, tot_warns_mm_e, tot_warns_mm_h]
-    worksheet.write_row(rep_line, 0, report)
-
     logger.info("Metamorphic Oracle summary:")
     logger.info("    Total number of E warnings: %s" % str(tot_warns_mm_e))
     logger.info("    Total number of H warnings: %s" % str(tot_warns_mm_h))
-
-    workbook.close()
 
     num_cycles = fuzzer.schedule.cycles
     total_trials = fuzzer.total_trials
@@ -92,13 +80,13 @@ parser = argparse.ArgumentParser(prog="DebuggingPolicies", description="Find bug
 parser.add_argument("-E", "--env_identifier", choices=['lunar', 'linetrack', 'bipedal', 'bipedal-hc'], required=True)
 parser.add_argument("-R", "--random_seed", type=int, required=True)
 parser.add_argument("-A", "--agent_path", required=True)
-parser.add_argument("-F", "--fuzz_type", default='gbox', choices=['gbox', 'bbox'])
+parser.add_argument("-F", "--fuzz_type", default='inc', choices=['inc', 'non-inc'])
 parser.add_argument("-O", "--oracle_type", default="metamorphic")
 parser.add_argument("-B", "--bug_type", default="qualitative", choices=['qualitative', 'quantitative'])
 parser.add_argument("-C", "--coverage", default="raw", choices=['raw', 'abs'])
-parser.add_argument("-CT", "--coverage_thold", default=2.0, type=float)  # 0.75 for lunar, 2.0 for bipedal
-parser.add_argument("-L", "--logfile", default="logs_/policy_testing_%s.log" % fuzz_start_time)
-parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and ipedal
+parser.add_argument("-CT", "--coverage_thold", default=2.0, type=float)
+parser.add_argument("-L", "--logfile", default="logs/policy_testing_%s.log" % fuzz_start_time)
+parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and bipedal
 parser.add_argument("-OMB", "--orcl_mut_bdgt", default=25, type=int)
 parser.add_argument("-D", "--delta", default=1.0, type=float)
 parser.add_argument("-IP", "--inf_probability", default=0.1, type=float)
@@ -132,7 +120,7 @@ logger.info("Coverage Type: %s", coverage)
 logger.info("Oracle Type: %s", oracle_type)
 
 test_out = test_policy(env_iden, fuzz_type, agent_path, bug_type, coverage, coverage_thold, rand_seed, fuzz_mut_bdgt, orcl_mut_bdgt, inf_prob, delta)
-pickle.dump(test_out, open("%s_%s_%d_%s_sp%f.p"%(env_iden, fuzz_type, rand_seed, fuzz_start_time, inf_prob), "wb"))
+pickle.dump(test_out, open("%s_%s_%d_%s_sp%f.p" % (env_iden, fuzz_type, rand_seed, fuzz_start_time, inf_prob), "wb"))
 
 # COMMANDS
 # -E linetrack -R 123 -A final_policies/linetrack_org.pth -F gbox -CT 3.6 -FMB 3 -OMB 1
