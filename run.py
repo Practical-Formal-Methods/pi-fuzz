@@ -137,9 +137,10 @@ logger.info("Oracle Type: %s", oracle_type)
 test_out = test_policy(env_iden, fuzz_type, agent_path, bug_type, coverage, coverage_thold, rand_seed, fuzz_mut_bdgt, orcl_mut_bdgt, sp_prob, delta)
 pickle.dump(test_out, open("%s_%s_%d_%s_sp%f.p"%(env_iden, fuzz_type, rand_seed, fuzz_start_time, sp_prob), "wb"))
 
-# -E linetrack -R 123 -A final_policies/linetrack_org.pth -F gbox -CT 5.0 -FMB 3 -OMB 1
-# -E lunar -R 123 -A final_policies/lunar_org -F gbox -CT 0.75 -FMB 25 -OMB 25
-
+# COMMANDS
+# -E linetrack -R 123 -A final_policies/linetrack_org.pth -F gbox -CT 3.6 -FMB 3 -OMB 1
+# -E lunar -R 123 -A final_policies/lunar_org -F gbox -CT 0.6 -FMB 25 -OMB 25
+# -E bipedal -R 123 -A final_policies/bipedal_org -F gbox -CT 2.0 -FMB 25 -OMB 25
 
 #
 # obs = game.env.reset()
