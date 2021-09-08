@@ -15,6 +15,7 @@ class SeedPolicyMutator(Mutator):
         self.wrapper.set_state(seed.hi_lvl_state)
         nn_state, hi_lvl_state = self.wrapper.get_state()
         mut_bdgt = rng.integers(self.fuzz_mut_bdgt)
+
         next_state = nn_state
         for _ in range(mut_bdgt):
             act = self.wrapper.model_step(next_state, deterministic=False)  # Stochastic
@@ -149,10 +150,10 @@ class BipedalEasyOracleMutator(Mutator):
 
         if mode == "easy":
             vel_coeff = 0.7
-            rough_coeff = 0.8
+            rough_coeff = 1
         else:
             vel_coeff = 0.9
-            rough_coeff = 1.2
+            rough_coeff = 1
 
         mut_terrain_y = []
         for i in range(TERRAIN_LENGTH):

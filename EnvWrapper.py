@@ -130,7 +130,13 @@ class Wrapper():
         total_reward = 0
         while True:
             _, hls = self.get_state()
-            visited_states.append(hls)
+            n_hls = []
+            for elm in hls:
+                if isinstance(elm, np.ndarray):
+                    elm = list(elm)
+                n_hls.append(elm)
+
+            visited_states.append(n_hls)
             act = self.model_step(next_state)
             reward, next_state, done = self.env_step(act)
             if render:
