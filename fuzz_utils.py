@@ -1,14 +1,11 @@
 import re
-import time
 import logging
 from os import listdir
 from os.path import isfile, join
 
 import numpy as np
 import pandas as pd
-import scipy.stats
 import matplotlib.pyplot as plt
-from sklearn.neighbors import NearestNeighbors
 from fuzz_config import FUZZ_BUDGET
 
 def plot_rq3_time_cloud(env_idn, pool_pop_summ):  #   pool_pop_summ_gb, pool_pop_summ_bb, pool_pop_summ_gbns):
@@ -19,7 +16,6 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ):  #   pool_pop_summ_gb, pool_pop
     for pp_summ in pool_pop_summ:
         all_sizes = []
         for pp in pp_summ:
-            print('yep')
             psize = []
             pp = np.array(pp)
             times = pp[:, 1]
@@ -59,8 +55,7 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ):  #   pool_pop_summ_gb, pool_pop
     plt.ylabel("Pool Size", fontsize=19)
     
     labels = ["INC=0.8 INF=0.2", "INC=0.8 INF=0.1", "INC=0.8 INF=0", "INC=0 INF=0.2", "INC=0 INF=0.1", "INC=0 INF=0"]
-    # labels = ["INC=0.2\nINF=0.2", "Inc. InfMut=0.1", "Inc. InfMut=0", "NonInc. InfMut=0.2", "NonInc. InfMut=0.1", "NonInc. InfMut=0"]
-    colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"] 
+    colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
     linestyles = ["-", "-", "-", "--", "--", "--"]
     for ls, clr, lbl, asm, ass in zip(linestyles, colors, labels, all_size_mean, all_size_std):
         plt.plot(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], asm[0:FUZZ_BUDGET:60], ls=ls, lw=2, label=lbl, color=clr)
@@ -69,19 +64,6 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ):  #   pool_pop_summ_gb, pool_pop
     plt.legend(loc="lower right", fontsize=16)
 
     plt.savefig("%s_poolsize_%d.pdf" % (env_idn, FUZZ_BUDGET), bbox_inches="tight")
-
-
-def plot_rq3_time(pool_pop_summ_gb, pool_pop_summ_bb):
-
-    for pp in pool_pop_summ_gb:
-        pp = np.array(pp)
-        plt.plot(pp[:, 1], pp[:, 2], lw=2)
-
-    for pp in pool_pop_summ_bb:
-        pp = np.array(pp)
-        plt.plot(pp[:, 1], pp[:, 2], "--", lw=2)
-
-    plt.savefig("rq3_poolovertime_timebdgt" + str(FUZZ_BUDGET) + ".pdf")
 
 
 def sub_rq3_warn(pools, mode="num_seeds"):
@@ -146,8 +128,7 @@ def plot_rq3_warn(env_idn, pools, mode="num_seeds"):  # pools_g, pools_b, pools_
 
 
     labels = ["INC=0.8 INF=0.2", "INC=0.8 INF=0.1", "INC=0.8 INF=0", "INC=0 INF=0.2", "INC=0 INF=0.1", "INC=0 INF=0"]
-    #labels = ["Inc. InfMut=0.2", "Inc. InfMut=0.1", "Inc. InfMut=0", "NonInc. InfMut=0.2", "NonInc. InfMut=0.1", "NonInc. InfMut=0"]
-    colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"] 
+    colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
     linestyles = ["-", "-", "-", "--", "--", "--"]
     for ls, clr, lbl, awm, aws in zip(linestyles, colors, labels, all_warns_over_time_mean, all_warns_over_time_std):
         plt.plot(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60], ls=ls, lw=2, label=lbl, color=clr)
@@ -155,6 +136,33 @@ def plot_rq3_warn(env_idn, pools, mode="num_seeds"):  # pools_g, pools_b, pools_
 
     plt.legend(loc="upper left", fontsize=16)
     plt.savefig("%s_warn_overtime_%d_%s.pdf" % (env_idn, FUZZ_BUDGET, mode), bbox_inches="tight")
+
+def boxplot(env_idn, num_tot_warn):
+    green_diamond = dict(markerfacecolor="g", marker="D")
+    # fig, ax = plt.subplots()
+    plt.figure(figsize=(10, 7.5))
+    ax = plt.subplot(111)
+
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+
+    plt.xlabel("Fuzzer Settings", fontsize=19)
+    plt.ylabel("# Bugs", fontsize=19)
+    bplot = ax.boxplot(num_tot_warn, flierprops=green_diamond, patch_artist=True)
+    ax.set_xticklabels(["INC=0.8\nINF=0.2", "INC=0.8\nINF=0.1", "INC=0.8\nINF=0", "INC=0\nINF=0.2", "INC=0\nINF=0.1", "INC=0\nINF=0"])
+
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16, rotation=30)
+    colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
+    linestyles = ["-", "-", "-", "--", "--", "--"]
+    for patch, color, ls in zip(bplot['boxes'], colors, linestyles):
+        patch.set_facecolor(color)
+        patch.set_linestyle(ls)
+
+    for element in ['whiskers', 'fliers', 'means', 'medians', 'caps']:
+        plt.setp(bplot[element], color="black", lw=2)
+    plt.setp(bplot["boxes"], lw=2)
+    plt.savefig("num_warn_boxplot_%s.pdf" % (env_idn), bbox_inches="tight")
 
 
 def plot_rq3_trial(pool_pop_summ, pool):
@@ -174,18 +182,6 @@ def post_fuzz_analysis(warnings):
     tot_warn_norm = sum(warnings)
 
     return ind_warn_norm, tot_warn_norm, var
-
-# LEGACY CODE
-def set_rngs():
-    agent_rngs = []
-    fuzz_rngs = []
-    orcl_rngs = []
-    for i in range(N_FUZZ_RUNS):
-        agent_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
-        fuzz_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
-        orcl_rngs.append(np.random.default_rng(RANDOM_SEEDS[i]))
-
-    return fuzz_rngs, orcl_rngs
 
 def setup_logger(name, log_file, level=logging.DEBUG):
     handler = logging.FileHandler(log_file, mode="w")
@@ -251,140 +247,6 @@ def post_fuzz_state_analysis(ex_fname, new_fname):
     with open(new_fname, 'w') as f:
         for line in lines_to_keep:  f.write(line + '\n')
 
-# LEGACY
-# def check_safe_state(game, path, action_space=[0,1,2,3,4]):
-#     lookahead_rewards = []
-#
-#     dev_paths = []
-#     # for repeat in range(LOOKAHEAD_DEPTH):
-#     dev_paths = list(itertools.product(action_space, repeat=LOOKAHEAD_DEPTH))
-#
-#     for dp in dev_paths:
-#         res = game.run_pol_fuzz(prefix=path+list(dp), safe_check=True)
-#         _, rew, _, _ = res["data"]
-#         lookahead_rewards.append(rew)
-#
-#     return lookahead_rewards
-
-def state_abstraction(cand_states):
-    l2_distance_thold = 2
-    for cand in cand_states:
-        pass
-    return True
-
-
-def plot_tims_vs_warnings(fname):
-    run_identifier = 'linetrack'
-    secs = []
-    wrngs = []
-    with open(fname, 'r') as fr:
-        for line in fr:
-            line = line.strip()
-            sec = float(line.split(',')[0].strip())
-            wrng = float(line.split(',')[1].strip())
-            secs.append(sec)
-            wrngs.append(wrng)
-
-    secs = [s-run_identifier for s in secs]  # file_identifier is the time the fuzzer begun
-
-    plt.plot(secs, wrngs)
-    plt.ylabel('num warnings')
-    plt.xlabel('time')
-    plt.savefig('time_vs_wrn.png')
-
-
-def log_time_vs_warnings(env_name, num_warnings):
-    run_identifier = 'linetrack'
-    cur_time = time.time()
-    with open('logs/' + env_name + '_time_vs_warnings' + run_identifier.replace(' ', '_') + '.txt', 'a') as fw:
-        fw.write(str(cur_time) + ', ' + str(num_warnings) + '\n')
-
-
-def emit_warning(env_name, start_level, org_reward, policy, new_reward):
-    run_identifier = 'linetrack'
-    # print("Overfitting state found: ", policy)
-    # act_obs_pairs = []
-    # for idx, pc in enumerate(pre_cov):
-    #     act_obs_pairs.append((policy[idx][0], list(pc)))
-
-    with open('logs/' + env_name + 'warnings' + run_identifier.replace(' ', '_') + '.txt', 'a') as fw:
-        fw.write(str(start_level) + '; ' + str(policy) + '; ' + str(new_reward[0]) + '; ' + str(
-            org_reward[0]))
-        fw.write('\n')
-
-
-def mean_confidence_interval(data, confidence=0.99):
-    a = 1.0 * np.array(data)
-    m, se = np.mean(a), scipy.stats.sem(a)
-
-    return scipy.stats.norm.interval(confidence, loc=m, scale=se)
-
-
-def time_bound_exceeded(fuzzer_start_time, bound_in_hours=12):  # todo hyperparamter
-    current_time = time.time()
-    if current_time - fuzzer_start_time > bound_in_hours * 60 * 60:
-        return True
-
-    return False
-
-def calculate_entropy(env_name, action_probs):
-
-    if env_name == 'maze':
-        eq_action_probs = []
-        for ap in action_probs:
-            ap = list(ap)
-            new_ap = []
-            new_ap.append(sum(ap[:3]))
-            new_ap.append(ap[3])
-            new_ap.append(ap[4] + sum(ap[9:]))
-            new_ap.append(ap[5])
-            new_ap.append(sum(ap[6:9]))
-
-            eq_action_probs.append(new_ap)
-    else:
-        eq_action_probs = action_probs
-
-    entropies = []
-    for ap in eq_action_probs: entropies.append(entropy(ap))
-
-    entropies = [float(e) for e in entropies]
-
-    return entropies
-
-
-def plot_entropy(entropies):
-    plt.plot(range(1, len(entropies)+1), entropies, marker='o')
-    plt.show()
-
-
-def entropy_seed_selection(org_pol_len, entropies, explored_seeds):
-    choice_list = [d for d in range(org_pol_len) if d not in explored_seeds]
-    choice_entr = [entropies[d] for d in choice_list]
-    rec_entropies = np.reciprocal(choice_entr)
-    norm_rec_entropies = rec_entropies / np.sum(rec_entropies)
-    new_seed_data = np.random.choice(choice_list, p=norm_rec_entropies)
-
-    return new_seed_data
-
-
-def random_seed_selection(org_pol_len, explored_seeds):
-    choice_list = [d for d in range(org_pol_len) if d not in explored_seeds]
-    new_seed_data = np.random.choice(choice_list)
-
-    return new_seed_data
-
-# @profile
-def coverage_update(covered, queries):
-    new_coverage = False
-    nbrs = NearestNeighbors(n_neighbors=1, algorithm='ball_tree', metric='euclidean').fit(covered)
-    for query in queries:
-        distance, _ = nbrs.kneighbors([query])
-        if distance[0] > COV_DIST_THOLD:
-            covered.append(query)
-            nbrs = NearestNeighbors(n_neighbors=1, algorithm='ball_tree', metric='euclidean').fit(covered)
-            new_coverage = True
-
-    return covered, new_coverage
 
 def read_outs_excel(folder=None, fuzz_type="gbox"):
     if folder is None:
@@ -410,38 +272,6 @@ def read_outs_excel(folder=None, fuzz_type="gbox"):
                 all_warns[idx] += list(warns)
 
     boxplot("all_agents", fuzz_type, all_warns)
-
-def boxplot(env_idn, num_tot_warn):
-    green_diamond = dict(markerfacecolor="g", marker="D")
-    # fig, ax = plt.subplots()
-    plt.figure(figsize=(10, 7.5))
-    ax = plt.subplot(111)
-
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
-
-    plt.xlabel("Fuzzer Settings", fontsize=19)
-    plt.ylabel("# Bugs", fontsize=19)
-    bplot = ax.boxplot(num_tot_warn, flierprops=green_diamond, patch_artist=True)
-    ax.set_xticklabels(["INC=0.8\nINF=0.2", "INC=0.8\nINF=0.1", "INC=0.8\nINF=0", "INC=0\nINF=0.2", "INC=0\nINF=0.1", "INC=0\nINF=0"])
-
-    plt.xticks(fontsize=16)
-    plt.yticks(fontsize=16, rotation=30)
-    colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
-    linestyles = ["-", "-", "-", "--", "--", "--"]
-    for patch, color, ls in zip(bplot['boxes'], colors, linestyles):
-        patch.set_facecolor(color)
-        patch.set_linestyle(ls)
-
-    for element in ['whiskers', 'fliers', 'means', 'medians', 'caps']:
-        plt.setp(bplot[element], color="black", lw=2)
-    plt.setp(bplot["boxes"], lw=2)
-    plt.savefig("num_warn_boxplot_%s.pdf" % (env_idn), bbox_inches="tight")
-
-
-
-
-
 
 
 def plot_training_curves():
@@ -483,19 +313,3 @@ def plot_training_curves():
     plt.savefig("training_curves.pdf", bbox_inches="tight")
 
     # plt.legend(loc="upper left", fontsize=12)
-
-
-# LEGACY
-# def mutate_seed_selection(scheduler, pool, org_pol_len, explored_seeds):
-#     seed = scheduler.choose(pool)
-#     new_seed_data = seed.data
-#     trial = 0
-#     while new_seed_data in explored_seeds:
-#         new_seed_data += random.normalvariate(MUTATE_MU, MUTATE_SIGMA)
-#         if new_seed_data < 0: new_seed_data = -new_seed_data
-#         if new_seed_data > (org_pol_len - 1): new_seed_data = org_pol_len - 1
-#         new_seed_data = int(new_seed_data)
-#         trial += 1
-#         if trial >= 10: random_seed_selection(org_pol_len, explored_seeds)
-#
-#     return seed, new_seed_data
