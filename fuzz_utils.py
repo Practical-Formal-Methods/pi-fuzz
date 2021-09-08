@@ -52,20 +52,21 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ):  #   pool_pop_summ_gb, pool_pop
 
     #plt.ylim(0, int(max_size + max_size*0.05))
 
-    plt.xticks(range(0, FUZZ_BUDGET+500, 10000), fontsize=12)
-    plt.yticks(range(0, int(max_size + max_size*0.05), 100), fontsize=12)
+    plt.xticks(range(0, FUZZ_BUDGET+500, 10000), fontsize=16)
+    plt.yticks(range(0, int(max_size + max_size*0.05), 100), rotation=30, fontsize=16)
 
-    plt.xlabel("Time (sec)", fontsize=14)
-    plt.ylabel("Pool Size", fontsize=14)
-
-    labels = ["Gbox InfP=0.2", "Gbox InfP=0.1", "Gbox InfP=0", "Bbox InfP=0.2", "Bbox InfP=0.1", "Bbox InfP=0"]
+    plt.xlabel("Time (sec)", fontsize=19)
+    plt.ylabel("Pool Size", fontsize=19)
+    
+    labels = ["INC=0.8 INF=0.2", "INC=0.8 INF=0.1", "INC=0.8 INF=0", "INC=0 INF=0.2", "INC=0 INF=0.1", "INC=0 INF=0"]
+    # labels = ["INC=0.2\nINF=0.2", "Inc. InfMut=0.1", "Inc. InfMut=0", "NonInc. InfMut=0.2", "NonInc. InfMut=0.1", "NonInc. InfMut=0"]
     colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"] 
     linestyles = ["-", "-", "-", "--", "--", "--"]
     for ls, clr, lbl, asm, ass in zip(linestyles, colors, labels, all_size_mean, all_size_std):
         plt.plot(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], asm[0:FUZZ_BUDGET:60], ls=ls, lw=2, label=lbl, color=clr)
-        plt.fill_between(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], asm[0:FUZZ_BUDGET:60]+ass[0:FUZZ_BUDGET:60], asm[0:FUZZ_BUDGET:60]-ass[0:FUZZ_BUDGET:60], color=clr, alpha=0.7)
+        plt.fill_between(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], asm[0:FUZZ_BUDGET:60]+ass[0:FUZZ_BUDGET:60], asm[0:FUZZ_BUDGET:60]-ass[0:FUZZ_BUDGET:60], color=clr, alpha=0.4)
 
-    plt.legend(loc="upper left", fontsize=12)
+    plt.legend(loc="lower right", fontsize=16)
 
     plt.savefig("%s_poolsize_%d.pdf" % (env_idn, FUZZ_BUDGET), bbox_inches="tight")
 
@@ -134,24 +135,25 @@ def plot_rq3_warn(env_idn, pools, mode="num_seeds"):  # pools_g, pools_b, pools_
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
-    plt.xticks(range(0, FUZZ_BUDGET+500, 10000), fontsize=12)
-    #plt.yticks(range(0, max_size, 100), fontsize=12)
+    plt.xticks(range(0, FUZZ_BUDGET+500, 10000), fontsize=16)
+    plt.yticks(fontsize=12, rotation=30)
 
-    plt.xlabel("Time (sec)", fontsize=14)
+    plt.xlabel("Time (sec)", fontsize=19)
     if mode == "num_seeds":
-        plt.ylabel("#Seeds Found Warn.", fontsize=14)
+        plt.ylabel("#Seeds Found Bug(s)", fontsize=19)
     elif mode == "num_bugs":
-        plt.ylabel("#Warnings", fontsize=14)
+        plt.ylabel("# Bugs", fontsize=19)
 
 
-    labels = ["Gbox InfP=0.2", "Gbox InfP=0.1", "Gbox InfP=0", "Bbox InfP=0.2", "Bbox InfP=0.1", "Bbox InfP=0"]
+    labels = ["INC=0.8 INF=0.2", "INC=0.8 INF=0.1", "INC=0.8 INF=0", "INC=0 INF=0.2", "INC=0 INF=0.1", "INC=0 INF=0"]
+    #labels = ["Inc. InfMut=0.2", "Inc. InfMut=0.1", "Inc. InfMut=0", "NonInc. InfMut=0.2", "NonInc. InfMut=0.1", "NonInc. InfMut=0"]
     colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"] 
     linestyles = ["-", "-", "-", "--", "--", "--"]
     for ls, clr, lbl, awm, aws in zip(linestyles, colors, labels, all_warns_over_time_mean, all_warns_over_time_std):
         plt.plot(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60], ls=ls, lw=2, label=lbl, color=clr)
-        plt.fill_between(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]+aws[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]-aws[0:FUZZ_BUDGET:60], color=clr, alpha=0.7)
+        plt.fill_between(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]+aws[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]-aws[0:FUZZ_BUDGET:60], color=clr, alpha=0.4)
 
-    plt.legend(loc="upper left", fontsize=12)
+    plt.legend(loc="upper left", fontsize=16)
     plt.savefig("%s_warn_overtime_%d_%s.pdf" % (env_idn, FUZZ_BUDGET, mode), bbox_inches="tight")
 
 
@@ -409,7 +411,7 @@ def read_outs_excel(folder=None, fuzz_type="gbox"):
 
     boxplot("all_agents", fuzz_type, all_warns)
 
-def boxplot(env_idn, fuzz_types, num_tot_warn):
+def boxplot(env_idn, num_tot_warn):
     green_diamond = dict(markerfacecolor="g", marker="D")
     # fig, ax = plt.subplots()
     plt.figure(figsize=(10, 7.5))
@@ -418,13 +420,13 @@ def boxplot(env_idn, fuzz_types, num_tot_warn):
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
-    plt.xlabel("Fuzz Type", fontsize=14)
-    plt.ylabel("# Warnings", fontsize=14)
+    plt.xlabel("Fuzzer Settings", fontsize=19)
+    plt.ylabel("# Bugs", fontsize=19)
     bplot = ax.boxplot(num_tot_warn, flierprops=green_diamond, patch_artist=True)
-    ax.set_xticklabels(fuzz_types)
+    ax.set_xticklabels(["INC=0.8\nINF=0.2", "INC=0.8\nINF=0.1", "INC=0.8\nINF=0", "INC=0\nINF=0.2", "INC=0\nINF=0.1", "INC=0\nINF=0"])
 
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.xticks(fontsize=16)
+    plt.yticks(fontsize=16, rotation=30)
     colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
     linestyles = ["-", "-", "-", "--", "--", "--"]
     for patch, color, ls in zip(bplot['boxes'], colors, linestyles):

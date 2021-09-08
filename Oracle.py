@@ -44,7 +44,7 @@ class MetamorphicOracle(Oracle):
 
     def explore(self, fuzz_seed):
         self.game.set_state(fuzz_seed.hi_lvl_state)  # [fuzz_seed.state_env, fuzz_seed.data[-1]])
-        agent_reward, _ = self.game.run_pol_fuzz(fuzz_seed.data, self.mode)
+        agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, self.mode)
 
         num_rejects = 0
         num_warning_easy = 0
@@ -85,7 +85,7 @@ class MetamorphicOracle(Oracle):
                 mut_reward, _, visited_states = self.game.run_pol_fuzz(nn_state, mode=self.mode)
                 if self.de_dup and list(visited_states) in bug_states: continue
                 if mut_reward - agent_reward > self.delta:
-                    num_warning_hard = 1
+                    num_warning_hard += 1
                     bug_states.append(list(visited_states))
 
         return num_warning_easy, num_warning_hard, num_rejects
