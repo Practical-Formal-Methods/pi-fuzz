@@ -2,13 +2,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from mod_gym import gym
-from mod_stable_baselines3.stable_baselines3 import DQN
+from mod_stable_baselines3.stable_baselines3 import DQN, PPO, DDPG, A2C, SAC
 from mod_stable_baselines3.stable_baselines3.common.evaluation import evaluate_policy
 from mod_stable_baselines3.stable_baselines3.common import results_plotter
 from mod_stable_baselines3.stable_baselines3.common.monitor import Monitor
 from mod_stable_baselines3.stable_baselines3.common.results_plotter import load_results, ts2xy
 from mod_stable_baselines3.stable_baselines3.common.callbacks import BaseCallback
-
+from stable_baselines3.common.env_util import make_vec_env
 
 class SaveOnBestTrainingRewardCallback(BaseCallback):
     """
@@ -38,7 +38,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
           # Retrieve training reward
           x, y = ts2xy(load_results(self.log_dir), 'timesteps')
           if len(x) > 0:
-              '''
+              
               # Mean training reward over the last 100 episodes
               mean_reward = np.mean(y[-100:])
               if self.verbose > 0:
@@ -51,43 +51,33 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
                   # Example for saving best model
                   if self.verbose > 0:
                     print("Saving new best model to {}".format(self.save_path))
-              '''
-              self.model.save(self.save_path + '_%d' % self.n_calls)
+              
+                  self.model.save(self.save_path + '_%d' % self.n_calls)
 
         return True
 
-# Create log dir
-log_dir = "tmp/"
-os.makedirs(log_dir, exist_ok=True)
-
 # Create environment
+#env = gym.make('BipedalWalker-v3')
 env = gym.make('LunarLander-v2')
-env = Monitor(env, log_dir)
-env.seed(3)
+env.seed(123)
 
-if False:
-    # Instantiate the agent
-    model = DQN('MlpPolicy', env, verbose=1)    
+# Instantiate the agent
+model = PPO('MlpPolicy', env, verbose=1)    
 
-    time_steps = int(1e6)
-    # Train the agent
-    callback = SaveOnBestTrainingRewardCallback(check_freq=50000, log_dir=log_dir)
-    model.learn(total_timesteps=time_steps, callback=callback)
+time_steps = int(1e6)
+# Train the agent
+callback = SaveOnBestTrainingRewardCallback(check_freq=40000, log_dir=log_dir)
+model.learn(total_timesteps=time_steps, callback=callback)
 
-    results_plotter.plot_results([log_dir], time_steps, results_plotter.X_TIMESTEPS, "DQN LunarLander")
-    plt.savefig("tmp/LunarDQNTraining%d.pdf" % time_steps)
-else:
-    # Load the trained agent
-    model = DQN.load("tmp/best_model_500000", env=env)
+results_plotter.plot_results([log_dir], time_steps, results_plotter.X_TIMESTEPS, "PPO Lunar")
+plt.savefig("LunarPPOTraining%d.pdf" % time_steps)
 
-    # Evaluate the agent
-    # NOTE: If you use wrappers with your environment that modify rewards,
-    #       this will be reflected here. To evaluate with original rewards,
-    #       wrap environment in a "Monitor" wrapper before other wrappers.
-    mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=30)
-    print(mean_reward, std_reward)
+# Load the trained agent
+model = PPO.load("lunar_org", env=env)
 
-exit()
+# Evaluate the agent
+mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=100)
+print(mean_reward, std_reward)
 
 # Enjoy trained agent
 env.seed(0)
