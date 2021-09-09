@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from fuzz_config import FUZZ_BUDGET
 
-def plot_rq3_time_cloud(env_idn, pool_pop_summ):
+def poolsize_over_time(env_idn, pool_pop_summ):
 
     all_size_mean = []
     all_size_std = []
@@ -66,7 +66,7 @@ def plot_rq3_time_cloud(env_idn, pool_pop_summ):
     plt.savefig("%s_poolsize_%d.pdf" % (env_idn, FUZZ_BUDGET), bbox_inches="tight")
 
 
-def sub_rq3_warn(pools, mode="num_seeds"):
+def sub_warn(pools, mode="num_seeds"):
     all_warn_seed_times = []
     all_num_warns = []
     for pool in pools:
@@ -96,14 +96,14 @@ def sub_rq3_warn(pools, mode="num_seeds"):
     return all_warns_over_time
 
 
-def plot_rq3_warn(env_idn, pools, mode="num_seeds"):  # pools_g, pools_b, pools_gns):
+def warn_over_time(env_idn, pools, mode="num_bugs"):  # pools_g, pools_b, pools_gns):
 
     max_size=0
     all_warns_over_time = []
     all_warns_over_time_mean = []
     all_warns_over_time_std = []
     for pool in pools:
-        warns_over_time = sub_rq3_warn(pool, mode)
+        warns_over_time = sub_warn(pool, mode)
         all_warns_over_time.append(warns_over_time)
         all_warns_over_time_mean.append(np.array(warns_over_time).mean(axis=0))
         all_warns_over_time_std.append(np.array(warns_over_time).std(axis=0))
