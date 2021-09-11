@@ -39,7 +39,7 @@ A number of parameters needed to be set to start a fuzzing campaing. Below we pr
 
 ## Replicating Results
 
-For each domain, we consider 6 fuzzer settings in which we change fuzzing type and informed mutations probabilities. For example for `lunar` domain we run the following experiments:
+We test π-fuzz on 3 domains: `linetrack`, `lunar` and `bipedal`. For each domain, we consider 6 fuzzer settings in which we change fuzzing type and informed mutations probabilities. For example, for `lunar` domain we run the following experiments:
 
 1. `python run.py -E lunar -R 1 -A policies/lunar_org -F inc -CT 0.6 -FMB 25 -IP 0`
 2. `python run.py -E lunar -R 1 -A policies/lunar_org -F inc -CT 0.6 -FMB 25 -IP 0.1`
@@ -48,6 +48,6 @@ For each domain, we consider 6 fuzzer settings in which we change fuzzing type a
 5. `python run.py -E lunar -R 1 -A policies/lunar_org -F non-inc -CT 0.6 -FMB 25 -IP 0.1`
 6. `python run.py -E lunar -R 1 -A policies/lunar_org -F non-inc -CT 0.6 -FMB 25 -IP 0.2`
 
-For replicating the exact results, run each experiment with random seeds from 1 to 8. Remember to keep `fuzz_config.py` file as default (i.e. `FUZZ_BUDGET=86400` and `SEARCH_BUDGET=1000`). `fuzz_utils.py` provides some useful functions to plot results (i.e. poolsize_over_time, warn_over_time, boxplot).
+For running experiments on other domains, provide the corresponding domain keyword after `-E`. For replicating the exact results, run each experiment with random seeds from 1 to 8. Remember to keep `fuzz_config.py` file as default (i.e. `FUZZ_BUDGET=86400` and `SEARCH_BUDGET=1000`). `fuzz_utils.py` provides some useful functions to plot results (i.e. poolsize_over_time, warn_over_time, boxplot).
 
 
