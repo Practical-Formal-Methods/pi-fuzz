@@ -45,6 +45,7 @@ class MetamorphicOracle(Oracle):
     def explore(self, fuzz_seed):
         self.game.set_state(fuzz_seed.hi_lvl_state)  # [fuzz_seed.state_env, fuzz_seed.data[-1]])
         agent_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, self.mode)
+        if agent_reward == 0: fuzz_seed.is_crash = True
 
         num_rejects = 0
         num_warning_easy = 0

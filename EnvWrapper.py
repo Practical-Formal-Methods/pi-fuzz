@@ -40,6 +40,8 @@ class Wrapper():
         ppo = PPO(env=self.env, seed=r_seed, policy=ActorCriticPolicy)
         model = ppo.load(load_path, env=self.env)
         self.model = model
+        print("agent loaded")
+        exit()
 
     def create_lunar_model(self, load_path, r_seed):
         ppo = PPO(env=self.env, seed=r_seed, policy=ActorCriticPolicy)
@@ -153,8 +155,8 @@ class Wrapper():
             if done:
                 if mode == "qualitative":
                     if -100 in all_rews:
-                        total_reward = 0 # walker fell before reaching end
+                        total_reward = 0 # walker fell before reaching end, lander crashed
                     else:
-                        total_reward = 100  # walker reached end
+                        total_reward = 100  # walker reached end, lander didnt crash
                     # total_reward = int(total_reward > 0) * 100  # if no crash 100 else 0
                 return total_reward, full_play, visited_states

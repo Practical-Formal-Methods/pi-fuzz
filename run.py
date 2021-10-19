@@ -21,7 +21,6 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     fuzzer = Fuzzer.Fuzzer(r_seed=r_seed, fuzz_type=fuzz_type, fuzz_game=game, inf_prob=inf_prob, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
     pop_summ = fuzzer.fuzz()
 
-
     print("Pool size:", len(fuzzer.pool))
     pickle.dump([pop_summ, fuzzer.pool, fuzzer.total_trials], open("%s_%s_%d_%s_sp%f_poolonly.p"%(env_identifier, fuzz_type, r_seed, fuzz_start_time, inf_prob), "wb"))
     

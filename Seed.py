@@ -14,3 +14,4 @@ class Seed(object):
         self.num_warn_mm_easy = 0
         self.gen_time = gen_time
         self.gen_trial = gen_trial
+        self.is_crash = False
