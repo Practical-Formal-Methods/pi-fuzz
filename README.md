@@ -12,7 +12,7 @@ Here are the 10 steps of making your working environment ready to π-fuzz:
 5. Install `conda` package manager by following instructions [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html).
 6. Clone the repository in a desired directory and enter (Skip this step if you are using the supplementary file provided together with the paper). 
 7. Run `git submodule init` and `git submodule update` commands to receive dependant submodules (Skip this step if you are using the supplementary file provided together with the paper).
-8. Create a new conda environment with the follwoing command `conda env create -f environment.yml`.
+8. Create a new conda environment with the following command `conda env create -f environment.yml`.
 9. Upon creation activate the environment with `conda activate pi-fuzz`.
 10. Create a directory named `logs` and you are good to go.
 
