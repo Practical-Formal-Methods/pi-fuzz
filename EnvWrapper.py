@@ -40,8 +40,6 @@ class Wrapper():
         ppo = PPO(env=self.env, seed=r_seed, policy=ActorCriticPolicy)
         model = ppo.load(load_path, env=self.env)
         self.model = model
-        print("agent loaded")
-        exit()
 
     def create_lunar_model(self, load_path, r_seed):
         ppo = PPO(env=self.env, seed=r_seed, policy=ActorCriticPolicy)
