@@ -148,6 +148,7 @@ class Wrapper():
             else:
                 total_reward = self.env.acc_return  # += np.power(GAMMA, num_steps) * reward
 
+
             all_rews.append(reward)
             full_play.append(act)
             if done:
