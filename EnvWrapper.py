@@ -4,8 +4,11 @@ import numpy as np
 
 from mod_gym import gym
 
-from linetrack.dqn.agent import Pseudo_Agent, Agent
+from linetrack.dqn.agent import Agent as LinetrackAgent
 from linetrack.model.model import Linetrack
+from racetrack.racetrack_dqn import Agent as RacetrackAgent
+from racetrack.environment import Environment as Racetrack
+from racetrack.argument_parser import Racetrack_parser
 from mod_stable_baselines3.stable_baselines3 import DQN, PPO
 from mod_stable_baselines3.stable_baselines3.common.policies import ActorCriticPolicy
 
@@ -55,7 +58,7 @@ class Wrapper():
         self.action_space = range(env.action_space.n)  # Discrete(4)
 
     def create_linetrack_model(self, load_path, r_seed):
-        ag = Agent(self.env, r_seed, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
+        ag = LinetrackAgent(self.env, r_seed, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
                   eps_decay=0.999, learning_count=0)
         ag.load(load_path, None)  # second parameter is useless here
         self.model = ag
@@ -69,6 +72,18 @@ class Wrapper():
         self.env = env
         self.action_space = env.action_space
 
+    def create_racetrack_model(self, load_path, r_seed):
+        ag = RacetrackAgent(self.env, r_seed)
+        ag.load(load_path)  # second parameter is useless here
+        self.model = ag
+
+    def create_racetrack_environment(self, r_seed):
+        rparser = Racetrack_parser()
+        namespace = rparser.parse(["hermes_name", "racetrack", "map_name", "barto-big", "-s", str(r_seed)])
+
+        env = Racetrack(rt_args=namespace)
+        self.env = env
+
     def create_environment(self, env_seed=None):
         if self.env_iden == "lunar":
             self.create_lunar_environment(env_seed)
@@ -79,6 +94,8 @@ class Wrapper():
         elif self.env_iden == "linetrack":
             rng = np.random.default_rng(env_seed)
             self.create_linetrack_environment(rng)
+        elif self.env_iden == "racetrack":
+            self.create_racetrack_environment(env_seed)
 
     def create_model(self, load_path, r_seed=None):
         if self.env_iden == "lunar":
@@ -87,6 +104,8 @@ class Wrapper():
             self.create_bipedal_model(load_path, r_seed)
         elif self.env_iden == "linetrack":
             self.create_linetrack_model(load_path, r_seed)
+        elif self.env_iden == "racetrack":
+            self.create_racetrack_model(load_path, r_seed)
 
     def get_state(self):
         nn_state, hi_lvl_state = None, None
@@ -96,6 +115,10 @@ class Wrapper():
         elif self.env_iden == "linetrack":
             nn_state, street = self.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
             hi_lvl_state = [street, nn_state[-1]]
+        elif self.env_iden == "racetrack":
+            nn_state = self.env.get_state()
+            hi_lvl_state = self.env.get_high_level_state()
+
         return nn_state, hi_lvl_state
 
     def set_state(self, hi_lvl_state):
@@ -103,12 +126,15 @@ class Wrapper():
             self.env.reset(hi_lvl_state=hi_lvl_state)
         elif self.env_iden == "linetrack":
             self.env.set_state(hi_lvl_state)
+        elif self.env_iden == "racetrack":
+            position, velocity, path, map_obj, _, _ = hi_lvl_state
+            self.env.reset_to_state(position, velocity, map_obj, path)
 
     def model_step(self, state, deterministic=True):
         act = None
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             act, _ = self.model.predict(state, deterministic=deterministic)
-        elif self.env_iden == "linetrack":
+        elif self.env_iden == "linetrack" or self.env_iden == "racetrack":
             act = self.model.act(state)
 
         return act
@@ -117,7 +143,7 @@ class Wrapper():
         reward, next_state, done = None, None, None
         if self.env_iden == "lunar" or self.env_iden == "bipedal"  or self.env_iden == "bipedal-hc":
             next_state, reward, done, info = self.env.step(action)
-        elif self.env_iden == "linetrack":
+        elif self.env_iden == "linetrack" or self.env_iden == "racetrack":
             reward, next_state, done = self.env.step(action)
 
         return reward, next_state, done

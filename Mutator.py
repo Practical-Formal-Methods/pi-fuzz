@@ -271,3 +271,28 @@ class LunarOracleMoonMutator(Mutator):
         hi_lvl_state[-1] = mut_height
 
         return hi_lvl_state
+
+
+class RacetrackOracleWallMutator(Mutator):
+    def __init__(self, wrapper, orcl_mut_bdgt):
+        super().__init__(wrapper)
+        self.orcl_mut_bdgt = orcl_mut_bdgt
+
+    def mutate(self, seed, rng, mode="easy"):
+        hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
+        map_obj = hi_lvl_state[0]
+        edge_road_pos = hi_lvl_state[-1]
+        edge_wall_pos = hi_lvl_state[-2]
+
+        if mode == "easy":
+            wall_to_road = rng.choice(edge_wall_pos, self.orcl_mut_bdgt)
+            for wtr in wall_to_road:
+                map_obj.map[wtr[0]][wtr[1]] = "."
+        else:
+            road_to_wall = rng.choice(edge_road_pos, self.orcl_mut_bdgt)
+            for rtw in road_to_wall:
+                map_obj.map[rtw[0]][rtw[1]] = "x"
+
+        hi_lvl_state[0] = map_obj
+
+        return hi_lvl_state

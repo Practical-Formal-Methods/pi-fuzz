@@ -76,7 +76,7 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
 fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
 
 parser = argparse.ArgumentParser(prog="DebuggingPolicies", description="Find bugs in your policy.")
-parser.add_argument("-E", "--env_identifier", choices=['lunar', 'linetrack', 'bipedal', 'bipedal-hc'], required=True)
+parser.add_argument("-E", "--env_identifier", choices=['lunar', 'linetrack', 'bipedal', 'bipedal-hc', 'racetrack'], required=True)
 parser.add_argument("-R", "--random_seed", type=int, required=True)
 parser.add_argument("-A", "--agent_path", required=True)
 parser.add_argument("-F", "--fuzz_type", default='inc', choices=['inc', 'non-inc'])
@@ -125,4 +125,5 @@ pickle.dump(test_out, open("%s_%s_%d_%s_sp%f.p" % (env_iden, fuzz_type, rand_see
 # -E linetrack -R 123 -A policies/linetrack_org.pth -F inc -CT 3.6 -FMB 3
 # -E lunar -R 123 -A policies/lunar_org -F inc -CT 0.6 -FMB 25
 # -E bipedal -R 123 -A policies/bipedal_org -F inc -CT 2.0 -FMB 25
+# -E racetrack -R 123 -A policies/racetrack_org -F inc -CT  -FMB
 
