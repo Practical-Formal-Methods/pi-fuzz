@@ -40,7 +40,7 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
     warnings_mm_h = []
     for idx, fuzz_seed in enumerate(fuzzer.pool):
         s = time.time()
-        num_warn_mm_e, num_warn_mm_h, num_rejects = mm_oracle.explore(fuzz_seed)
+        num_warn_mm_e, num_warn_mm_h, num_rejects, rule_orcl_evl = mm_oracle.explore(fuzz_seed)
         e = time.time()
         total_time += (e-s)
         num_warn_mm_tot = num_warn_mm_e + num_warn_mm_h
@@ -53,6 +53,8 @@ def test_policy(env_identifier, fuzz_type, agent_path, bug_type, coverage, cover
 
         tot_num_rejects += num_rejects
         logger.info("Metamorphic Oracle has found %d(E) + %d(H) = %d warnings in seed %d. Num rejects: %d." % (num_warn_mm_e, num_warn_mm_h, num_warn_mm_tot, idx, num_rejects))
+        (rule_tp, rule_tn, rule_fp, rule_fn) = rule_orcl_evl
+        logger.info("Rule Based Oracle evaluation: TP: %d, TN: %d, FP: %d, FN: %d." % (rule_tp, rule_tn, rule_fp, rule_fn))
 
     avg_time = total_time / len(fuzzer.pool)
     _, tot_warns_mm_e, _ = post_fuzz_analysis(warnings_mm_e)
@@ -122,7 +124,7 @@ test_out = test_policy(env_iden, fuzz_type, agent_path, bug_type, coverage, cove
 pickle.dump(test_out, open("%s_%s_%d_%s_sp%f.p" % (env_iden, fuzz_type, rand_seed, fuzz_start_time, inf_prob), "wb"))
 
 # COMMANDS
-# -E linetrack -R 123 -A policies/linetrack_org.pth -F inc -CT 3.6 -FMB 3
+# -E linetrack -R 123 -A policies/linetrack_org.pth -F inc -CT 3.6 -FMB 3 -OMB 2
 # -E lunar -R 123 -A policies/lunar_org -F inc -CT 0.6 -FMB 25
 # -E bipedal -R 123 -A policies/bipedal_org -F inc -CT 2.0 -FMB 25
 # -E racetrack -R 123 -A policies/racetrack_org -F inc -CT  -FMB
