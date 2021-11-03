@@ -74,7 +74,7 @@ class Wrapper():
 
     def create_racetrack_model(self, load_path, r_seed):
         ag = RacetrackAgent(self.env, r_seed)
-        ag.load(load_path)  # second parameter is useless here
+        ag.load(load_path)
         self.model = ag
 
     def create_racetrack_environment(self, r_seed):
