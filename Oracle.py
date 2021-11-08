@@ -37,6 +37,8 @@ class MetamorphicOracle(Oracle):
         super().__init__(game, mode, r_seed, delta, de_dup)
         if game.env_iden == "linetrack":
             self.mutator = Mutator.LinetrackOracleMutator(game, orcl_mut_bdgt)
+        elif game.env_iden == "racetrack":
+            self.mutator = Mutator.RacetrackOracleWallMutator(game, orcl_mut_bdgt)
         elif game.env_iden == "lunar":
             self.mutator = Mutator.LunarOracleMoonHeightMutator(game)
         elif game.env_iden == "bipedal":
@@ -53,7 +55,7 @@ class MetamorphicOracle(Oracle):
         num_warning_hard = 0
         bug_states = []
         for idx in range(SEARCH_BUDGET):
-            if self.game.env_iden == "linetrack":
+            if self.game.env_iden == "linetrack" or self.game.env_iden == "racetrack":
                 exp_rng = np.random.default_rng(self.r_seed)
                 self.game.env.reset(exp_rng)
             else:
