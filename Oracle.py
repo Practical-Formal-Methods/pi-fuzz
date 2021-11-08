@@ -55,9 +55,11 @@ class MetamorphicOracle(Oracle):
         num_warning_hard = 0
         bug_states = []
         for idx in range(SEARCH_BUDGET):
-            if self.game.env_iden == "linetrack" or self.game.env_iden == "racetrack":
+            if self.game.env_iden == "linetrack":
                 exp_rng = np.random.default_rng(self.r_seed)
                 self.game.env.reset(exp_rng)
+            elif self.game.env_iden == "racetrack":
+                self.game.env.reset()  # random seed is refreshed inside of reset function
             else:
                 self.game.env.seed(self.r_seed)
             # make map EASIER
