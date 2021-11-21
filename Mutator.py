@@ -280,19 +280,22 @@ class RacetrackOracleWallMutator(Mutator):
 
     def mutate(self, seed, rng, mode="easy"):
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
-        map_obj = hi_lvl_state[0]
+        map_obj = hi_lvl_state[3]
         edge_road_pos = hi_lvl_state[-1]
         edge_wall_pos = hi_lvl_state[-2]
-
         if mode == "easy":
             wall_to_road = rng.choice(edge_wall_pos, self.orcl_mut_bdgt)
             for wtr in wall_to_road:
-                map_obj.map[wtr[0]][wtr[1]] = "."
+                map_line = list(map_obj.map[wtr[0]])
+                map_line[wtr[1]] = "."
+                map_obj.map[wtr[0]] = ''.join(map_line)
         else:
             road_to_wall = rng.choice(edge_road_pos, self.orcl_mut_bdgt)
             for rtw in road_to_wall:
-                map_obj.map[rtw[0]][rtw[1]] = "x"
+                map_line = list(map_obj.map[rtw[0]])
+                map_line[rtw[1]] = "x"
+                map_obj.map[rtw[0]] = ''.join(map_line)
 
-        hi_lvl_state[0] = map_obj
+        hi_lvl_state[3] = map_obj
 
         return hi_lvl_state

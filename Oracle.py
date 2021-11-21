@@ -47,6 +47,7 @@ class MetamorphicOracle(Oracle):
     def explore(self, fuzz_seed):
         self.game.set_state(fuzz_seed.hi_lvl_state)  # [fuzz_seed.state_env, fuzz_seed.data[-1]])
         agent_reward, org_play, _ = self.game.run_pol_fuzz(fuzz_seed.data, self.mode)
+
         if agent_reward == 0: fuzz_seed.is_crash = True
 
         rule_tp, rule_tn, rule_fp, rule_fn = 0, 0, 0, 0
@@ -55,6 +56,7 @@ class MetamorphicOracle(Oracle):
         num_warning_hard = 0
         bug_states = []
         for idx in range(SEARCH_BUDGET):
+
             if self.game.env_iden == "linetrack":
                 exp_rng = np.random.default_rng(self.r_seed)
                 self.game.env.reset(exp_rng)
@@ -63,47 +65,48 @@ class MetamorphicOracle(Oracle):
             else:
                 self.game.env.seed(self.r_seed)
             # make map EASIER
-            if idx % 2 == 0:
+            if agent_reward > 0:
                 mut_state = self.mutator.mutate(fuzz_seed, self.rng, mode='easy')
+
                 if mut_state is None:
                     num_rejects += 1
                     continue
-
+                
                 self.game.set_state(mut_state)  # linetrack: [street, v])
-                nn_state, _ = self.game.get_state()
+                nn_state, hi_state = self.game.get_state()
+                
+                if self.de_dup and hi_state in bug_states: continue
 
-                mut_reward, mut_play, visited_states = self.game.run_pol_fuzz(nn_state, self.mode)
+                mut_reward, mut_play, _ = self.game.run_pol_fuzz(nn_state, self.mode)
+                
+                # rule_warn = False
+                # if mut_play[0] != org_play[0]: rule_warn = True
 
-                rule_warn = False
-                if mut_play[0] != org_play[0]: rule_warn = True
-
-                if self.de_dup and list(visited_states) in bug_states: continue
-                mut_warn = False
                 if agent_reward - mut_reward > self.delta:
-                    mut_warn = True
                     num_warning_easy += 1
-                    bug_states.append(list(visited_states))
+                    bug_states.append(hi_state)
 
-                if rule_warn and mut_warn: rule_tp += 1
-                elif rule_warn and not mut_warn: rule_fp += 1
-                elif not rule_warn and mut_warn: rule_fn += 1
-                elif not rule_warn and not mut_warn: rule_tn += 1
+                # if rule_warn and mut_warn: rule_tp += 1
+                # elif rule_warn and not mut_warn: rule_fp += 1
+                # elif not rule_warn and mut_warn: rule_fn += 1
+                # elif not rule_warn and not mut_warn: rule_tn += 1
 
             # make map HARDER
             else:
+                if num_warning_hard > 0: continue  # can find only one hard warning on one state
+
                 mut_state = self.mutator.mutate(fuzz_seed, self.rng, mode='hard')
                 if mut_state is None:
                     num_rejects += 1
                     continue
 
                 self.game.set_state(mut_state)  # linetrack: [street, v])
-                nn_state, _ = self.game.get_state()
+                nn_state, hi_state = self.game.get_state()
 
-                mut_reward, _, visited_states = self.game.run_pol_fuzz(nn_state, mode=self.mode)
-                if self.de_dup and list(visited_states) in bug_states: continue
+                mut_reward, _, _ = self.game.run_pol_fuzz(nn_state, mode=self.mode)
                 if mut_reward - agent_reward > self.delta:
-                    num_warning_hard += 1
-                    bug_states.append(list(visited_states))
+                    num_warning_hard = 1   # in this case there can only be one bug which is on the original state
+
 
         return num_warning_easy, num_warning_hard, num_rejects, (rule_tp, rule_tn, rule_fp, rule_fn)
 

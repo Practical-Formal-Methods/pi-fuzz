@@ -6,9 +6,9 @@ from mod_gym import gym
 
 from linetrack.dqn.agent import Agent as LinetrackAgent
 from linetrack.model.model import Linetrack
-from racetrack.racetrack_dqn import Agent as RacetrackAgent
-from racetrack.environment import Environment as Racetrack
-from racetrack.argument_parser import Racetrack_parser
+from mod_racetrack.racetrack_dqn import Agent as RacetrackAgent
+from mod_racetrack.environment import Environment as Racetrack
+from mod_racetrack.argument_parser import Racetrack_parser
 from mod_stable_baselines3.stable_baselines3 import DQN, PPO
 from mod_stable_baselines3.stable_baselines3.common.policies import ActorCriticPolicy
 
@@ -73,16 +73,18 @@ class Wrapper():
         self.action_space = env.action_space
 
     def create_racetrack_model(self, load_path, r_seed):
-        ag = RacetrackAgent(self.env, r_seed)
+        rparser = Racetrack_parser()
+        namespace = rparser.parse(["racetrack", "ring", "-s", str(r_seed), "-n", "-rs", "-nr", "-100"])
+        ag = RacetrackAgent(self.env, namespace)
         ag.load(load_path)
         self.model = ag
 
     def create_racetrack_environment(self, r_seed):
         rparser = Racetrack_parser()
-        namespace = rparser.parse(["hermes_name", "racetrack", "map_name", "barto-big", "-s", str(r_seed)])
-
+        namespace = rparser.parse(["racetrack", "ring", "-s", str(r_seed), "-n", "-rs", "-nr", "-100"])
         env = Racetrack(rt_args=namespace)
         self.env = env
+        self.action_space = range(9) 
 
     def create_environment(self, env_seed=None):
         if self.env_iden == "lunar":
@@ -155,13 +157,14 @@ class Wrapper():
         visited_states = []
         total_reward = 0
         while True:
+            
             _, hls = self.get_state()
             n_hls = []
             for elm in hls:
                 if isinstance(elm, np.ndarray):
                     elm = list(elm)
                 n_hls.append(elm)
-
+           
             visited_states.append(n_hls)
             act = self.model_step(next_state)
             reward, next_state, done = self.env_step(act)
@@ -169,19 +172,22 @@ class Wrapper():
                 self.env.render()
                 time.sleep(0.01)
 
-            if self.env_iden == "lunar" or self.env_iden == "bipedal":
+            if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "racetrack":
                 total_reward += reward
             else:
                 total_reward = self.env.acc_return  # += np.power(GAMMA, num_steps) * reward
 
-
             all_rews.append(reward)
             full_play.append(act)
+
+            # racetrack agent can stuck, thus prevent this
+            if self.env_iden == "racetrack" and len(full_play) == 200: 
+                return 0, full_play, visited_states
+
             if done:
                 if mode == "qualitative":
                     if -100 in all_rews:
                         total_reward = 0 # walker fell before reaching end, lander crashed
                     else:
                         total_reward = 100  # walker reached end, lander didnt crash
-                    # total_reward = int(total_reward > 0) * 100  # if no crash 100 else 0
                 return total_reward, full_play, visited_states
