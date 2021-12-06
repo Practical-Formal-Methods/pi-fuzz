@@ -150,7 +150,7 @@ class Wrapper():
 
         return reward, next_state, done
 
-    def run_pol_fuzz(self, init_state, mode="qualitative", render=False):
+    def run_pol_fuzz(self, init_state, mode="qualitative", render=False, randomized=False, rng=None):
         next_state = init_state
         full_play = []
         all_rews = []
@@ -166,7 +166,10 @@ class Wrapper():
                 n_hls.append(elm)
            
             visited_states.append(n_hls)
-            act = self.model_step(next_state)
+            
+            if not randomized:  act = self.model_step(next_state)
+            else: act = rng.integers(4)  # this is specifically used for Lunar where there are 4 available actions
+
             reward, next_state, done = self.env_step(act)
             if render:
                 self.env.render()
