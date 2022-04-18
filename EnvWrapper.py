@@ -193,4 +193,4 @@ class Wrapper():
                         total_reward = 0 # walker fell before reaching end, lander crashed
                     else:
                         total_reward = 100  # walker reached end, lander didnt crash
-                return total_reward, full_play, visited_states
+                return total_reward, full_play, all_rews # visited_states
