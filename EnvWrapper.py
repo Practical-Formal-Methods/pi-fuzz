@@ -6,9 +6,9 @@ from mod_gym import gym
 
 from linetrack.dqn.agent import Agent as LinetrackAgent
 from linetrack.model.model import Linetrack
-from racetrack.racetrack_dqn import Agent as RacetrackAgent
-from racetrack.environment import Environment as Racetrack
-from racetrack.argument_parser import Racetrack_parser
+# from racetrack.racetrack_dqn import Agent as RacetrackAgent
+# from racetrack.environment import Environment as Racetrack
+# from racetrack.argument_parser import Racetrack_parser
 from mod_stable_baselines3.stable_baselines3 import DQN, PPO
 from mod_stable_baselines3.stable_baselines3.common.policies import ActorCriticPolicy
 
