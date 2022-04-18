@@ -202,7 +202,7 @@ class LunarOracleMoonHeightMutator(Mutator):
         mut_height[CHUNKS//2+1] = mut_helipad_height
         mut_height[CHUNKS//2+2] = mut_helipad_height
 
-        hi_lvl_state[-1] = mut_height
+        hi_lvl_state[-1] = list(mut_height)
 
         return hi_lvl_state
 
