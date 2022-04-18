@@ -12,6 +12,10 @@ class Seed(object):
         self.num_warn_la = 0
         self.num_warn_mm_hard = 0
         self.num_warn_mm_easy = 0
+        self.num_warn_optimal = 0
+        self.num_warn_fail = 0
+        self.num_warn_rule = 0
+        self.num_warn_ideal = 0
         self.gen_time = gen_time
         self.gen_trial = gen_trial
         self.is_crash = False
