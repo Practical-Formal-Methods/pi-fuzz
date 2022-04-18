@@ -66,7 +66,7 @@ def poolsize_over_time(env_idn, pool_pop_summ):
     plt.savefig("%s_poolsize_%d.pdf" % (env_idn, FUZZ_BUDGET), bbox_inches="tight")
 
 
-def sub_warn(pools, mode="num_seeds"):
+def sub_warn(pools, mode):
     all_warn_seed_times = []
     all_num_warns = []
     for pool in pools:
@@ -127,15 +127,261 @@ def warn_over_time(env_idn, pools, mode="num_bugs"):  # pools_g, pools_b, pools_
         plt.ylabel("# Bugs", fontsize=19)
 
 
-    labels = ["INC=0.8 INF=0.2", "INC=0.8 INF=0.1", "INC=0.8 INF=0", "INC=0 INF=0.2", "INC=0 INF=0.1", "INC=0 INF=0"]
-    colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
+    # labels = ["INC=0.8 INF=0.2", "INC=0.8 INF=0.1", "INC=0.8 INF=0", "INC=0 INF=0.2", "INC=0 INF=0.1", "INC=0 INF=0"]
+    # colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
     linestyles = ["-", "-", "-", "--", "--", "--"]
-    for ls, clr, lbl, awm, aws in zip(linestyles, colors, labels, all_warns_over_time_mean, all_warns_over_time_std):
-        plt.plot(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60], ls=ls, lw=2, label=lbl, color=clr)
+    for clr, lbl, awm, aws in zip(colors, labels, all_warns_over_time_mean, all_warns_over_time_std):
+        plt.plot(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60], lw=2, label=lbl, color=clr)
         plt.fill_between(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]+aws[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60]-aws[0:FUZZ_BUDGET:60], color=clr, alpha=0.4)
 
     plt.legend(loc="upper left", fontsize=16)
     plt.savefig("%s_warn_overtime_%d_%s.pdf" % (env_idn, FUZZ_BUDGET, mode), bbox_inches="tight")
+
+
+
+def plot_orcl_evl(pools, fail_pools, perf_pools, env_idn):  # pools  orresponds to 8 run of one setting INC, INF02
+    
+    max_pool_size = 0
+    for pool in pools:
+        if len(pool) > max_pool_size: max_pool_size = len(pool)
+
+    print(max_pool_size)
+    print(len(pools))
+    print(len(fail_pools))
+    print(len(perf_pools))
+    
+    all_mm_base_warns = []
+    all_mm_ext_warns = []
+    all_fail_warns = []
+    all_rule_warns = []
+    all_opt_warns = []
+    all_idl_warns = []
+    all_f_idl_warns = []
+    all_p_idl_warns = []
+    for pool, fail_pool, perf_pool in zip(pools, fail_pools, perf_pools):
+        mm_base_warns = []
+        mm_ext_warns = []
+        fail_warns = []
+        rule_warns = []
+        opt_warns = []
+        idl_warns = []
+        f_idl_warns = []
+        p_idl_warns = []
+        seed_ptr = 0
+        num_mm_base_warn = 0
+        num_mm_ext_warn = 0
+        num_fail_warn = 0
+        num_rule_warn = 0
+        num_opt_warn = 0
+        num_idl_warn = 0
+        num_f_idl_warn = 0
+        num_p_idl_warn = 0
+        '''
+        for time_bucket in range(0, FUZZ_BUDGET, 60):
+            seed = pool[seed_ptr]
+            while seed.gen_time < time_bucket:
+                num_mm_base_warn += seed.num_warn_mm_hard
+                num_mm_ext_warn += seed.num_warn_mm_hard + seed.num_warn_mm_easy
+                num_fail_warn += seed.num_warn_fail
+                num_rule_warn += seed.num_warn_rule
+                num_opt_warn += seed.num_warn_optimal
+                if not env_idn == "bipedal": num_idl_warn += seed.num_warn_ideal
+
+                seed_ptr += 1
+                seed = pool[seed_ptr]
+        '''
+        for fseed, fseed_fail, fseed_perf in zip(pool, fail_pool, perf_pool):
+            num_mm_base_warn += fseed.num_warn_mm_hard
+            num_mm_ext_warn += fseed.num_warn_mm_hard + fseed.num_warn_mm_easy
+            num_fail_warn += fseed.num_warn_fail
+            num_rule_warn += fseed.num_warn_rule
+            num_opt_warn += fseed.num_warn_optimal
+            if not env_idn == "bipedal": 
+                num_idl_warn += fseed.num_warn_ideal
+                num_f_idl_warn += fseed_fail.num_warn_ideal
+            
+            if env_idn == "linetrack":
+                num_p_idl_warn += fseed_perf.num_warn_ideal
+            
+            mm_base_warns.append(num_mm_base_warn)
+            mm_ext_warns.append(num_mm_ext_warn)
+            fail_warns.append(num_fail_warn)
+            rule_warns.append(num_rule_warn)
+            opt_warns.append(num_opt_warn)
+            idl_warns.append(num_idl_warn)
+            f_idl_warns.append(num_f_idl_warn)
+            p_idl_warns.append(num_p_idl_warn)
+        
+        for _ in range(max_pool_size - len(pool)):
+            mm_base_warns.append(num_mm_base_warn)
+            mm_ext_warns.append(num_mm_ext_warn)
+            fail_warns.append(num_fail_warn)
+            rule_warns.append(num_rule_warn)
+            opt_warns.append(num_opt_warn)
+            idl_warns.append(num_idl_warn)
+            f_idl_warns.append(num_f_idl_warn)
+            p_idl_warns.append(num_p_idl_warn)
+            
+        all_mm_base_warns.append(mm_base_warns)
+        all_mm_ext_warns.append(mm_ext_warns)
+        all_fail_warns.append(fail_warns)
+        all_rule_warns.append(rule_warns)
+        all_opt_warns.append(opt_warns)
+        all_idl_warns.append(idl_warns)
+        all_f_idl_warns.append(f_idl_warns)
+        all_p_idl_warns.append(p_idl_warns)
+    
+    print(np.array(all_f_idl_warns).shape)
+    all_warns_mean = [ np.array(all_mm_ext_warns).mean(axis=0), np.array(all_p_idl_warns).mean(axis=0), np.array(all_fail_warns).mean(axis=0), np.array(all_f_idl_warns).mean(axis=0), np.array(all_opt_warns).mean(axis=0), np.array(all_mm_base_warns).mean(axis=0), np.array(all_idl_warns).mean(axis=0), np.array(all_rule_warns).mean(axis=0) ]
+    all_warns_std = [ np.array(all_mm_ext_warns).std(axis=0), np.array(all_p_idl_warns).std(axis=0), np.array(all_fail_warns).std(axis=0), np.array(all_f_idl_warns).std(axis=0), np.array(all_opt_warns).std(axis=0), np.array(all_mm_base_warns).std(axis=0), np.array(all_idl_warns).std(axis=0), np.array(all_rule_warns).std(axis=0) ]
+
+    labels = [ "MMSeedBugExt", "PerfectBug", "FailureSeedBug", "MMBug", "PerfectSeedBug", "MMSeedBugBasic", "MMSeedBug2Bug", "RuleSeedBug" ]
+    # labels = ["ExtendedMM", "Failure-Based", "FailProb.", "Perfect", "BasicMM", "BasicMMFailProb.", "Rule-Based" ]
+    colors = ["#344588", "#f963e5", "#f29544", "#b2b200", "#33fff6", "#e32d2d", "#43ce3b", "#955a92" ]
+    #0213c7  e32dd2  
+    
+    bug_labels = ["PerfectBug", "MMBug", "MMSeedBug2Bug"]
+    seedbug_labels = ["MMSeedBugExt", "FailureSeedBug", "PerfectSeedBug", "MMSeedBugBasic", "RuleSeedBug" ]
+    
+    plt.figure(figsize=(10, 7.5))
+    ax = plt.subplot(111)
+    
+    ax.set_yscale('log')
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+
+    plt.xticks(range(0, max_pool_size+10, 200), fontsize=16)
+    plt.yticks(fontsize=12, rotation=30)
+    plt.xlabel("Pool Size", fontsize=19)
+    plt.ylabel("# Bugs", fontsize=19)
+
+    if env_idn == "lunar":
+        colors[5], colors[6] = colors[6], colors[5]
+        labels[5], labels[6] = labels[6], labels[5]
+        all_warns_mean[5], all_warns_mean[6] = all_warns_mean[6], all_warns_mean[5]
+        all_warns_std[5], all_warns_std[6] = all_warns_std[6], all_warns_std[5]
+
+    if env_idn == "linetrack":
+        colors[2], colors[3] = colors[3], colors[2]
+        labels[2], labels[3] = labels[3], labels[2]
+        all_warns_mean[2], all_warns_mean[3] = all_warns_mean[3], all_warns_mean[2]
+        all_warns_std[2], all_warns_std[3] = all_warns_std[3], all_warns_std[2]
+
+    for clr, lbl, awm, aws in zip(colors, labels, all_warns_mean, all_warns_std):
+        alph = 0.4
+        #if lbl in seedbug_labels : continue
+        if lbl in bug_labels : continue
+        if not env_idn == "linetrack" and lbl == "PerfectSeedBug": continue  # optimal oracle available only in linetrack
+        if not env_idn == "linetrack" and lbl == "PerfectBug": continue  # optimal oracle available only in linetrack
+        if (env_idn == "bipedal" and lbl == "MMSeedBug2Bug") or (env_idn == "bipedal" and lbl == "MMBug"): continue
+        if env_idn == "lunar" and lbl == "RuleSeedBug": aws = [ min(s, m/1.5) for m, s in zip(awm, aws)]
+        if env_idn == "lunar" and lbl == "MMSeedBugExt": aws = [ min(s, m/1.5) for m, s in zip(awm, aws)] 
+        # aws = min(aws, awm/2)
+        # range(0, FUZZ_BUDGET, 60)
+        plt.plot(range(max_pool_size), awm, lw=2, label=lbl, color=clr)
+        plt.fill_between(range(max_pool_size), awm+aws, awm-aws, color=clr, alpha=alph)
+
+    if env_idn == "lunar":
+        handles, labels = plt.gca().get_legend_handles_labels()
+        # order = [2, 3, 0, 1, 4, 5]
+        order1 = [2, 3]
+        order2 = [0, 1, 4, 5]
+        # plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order], loc="lower right", fontsize=16 )
+        
+        first_legend = ax.legend( [handles[idx] for idx in order1], [labels[idx] for idx in order1], loc='lower left', bbox_to_anchor=(0.25, 0.), fontsize=16)
+        ax.add_artist(first_legend)
+        ax.legend( [handles[idx] for idx in order2], [labels[idx] for idx in order2], loc='lower right', fontsize=16)
+
+    elif env_idn == "linetrack":
+        handles, labels = plt.gca().get_legend_handles_labels()
+        # order = [1, 2, 6, 0, 3, 4, 5, 7]
+        # order1 = [1, 2, 6]
+        # order2 = [0, 3, 4, 5, 7]
+        bug_order = [0, 1, 2] 
+        seedbug_order = [0, 1, 2, 3, 4]
+        print(labels)
+        #first_legend = ax.legend( [handles[idx] for idx in order1], [labels[idx] for idx in order1], loc='lower left', bbox_to_anchor=(0.25, 0.), fontsize=16)
+        #ax.add_artist(first_legend)
+        #ax.legend( [handles[idx] for idx in order2], [labels[idx] for idx in order2], loc='lower right', fontsize=16)
+         
+        #ax.legend( [handles[idx] for idx in bug_order], [labels[idx] for idx in bug_order], loc='lower right', fontsize=16)
+        ax.legend( [handles[idx] for idx in seedbug_order], [labels[idx] for idx in seedbug_order], loc='lower right', fontsize=16)
+        
+    else:
+        plt.legend(loc="lower right", fontsize=16 )
+        # plt.legend(loc="upper left", fontsize=16 )
+
+    plt.savefig("%s_oracle_eval_seedbug_psize.pdf" % (env_idn), bbox_inches="tight")
+
+
+
+def plot_fuzzer_evl(env_idn, cov0_inf0_pools, cov0_inf02_pools, inf0_pools, inf02_pools):
+
+    all_pools = [cov0_inf0_pools, cov0_inf02_pools, inf0_pools, inf02_pools]
+
+    all_setting_max_psize = []
+    all_setting_mean_warns = []
+    all_setting_std_warns = []
+    for pools in all_pools:
+        all_mm_base_warns = []
+        all_mm_ext_warns = []
+
+        max_pool_size = 0
+        for pool in pools:
+            if len(pool) > max_pool_size: max_pool_size = len(pool)
+        
+        print(max_pool_size)
+        for pool in pools:
+            mm_base_warns = []
+            mm_ext_warns = []
+            num_mm_base_warn = 0
+            num_mm_ext_warn = 0
+            
+            for fseed in pool:
+                num_mm_base_warn += fseed.num_warn_mm_hard
+                num_mm_ext_warn += fseed.num_warn_mm_hard + fseed.num_warn_mm_easy
+
+                mm_base_warns.append(num_mm_base_warn)
+                mm_ext_warns.append(num_mm_ext_warn)
+            
+            for _ in range(max_pool_size - len(pool)):
+                mm_base_warns.append(num_mm_base_warn)
+                mm_ext_warns.append(num_mm_ext_warn)
+
+            all_mm_base_warns.append(mm_base_warns)
+            all_mm_ext_warns.append(mm_ext_warns)
+        
+        all_setting_max_psize.append(max_pool_size)
+        all_setting_max_psize.append(max_pool_size)  # extra is neede for base mm
+
+        all_setting_mean_warns.append( np.array(all_mm_ext_warns).mean(axis=0))
+        all_setting_std_warns.append( np.array(all_mm_ext_warns).std(axis=0))
+        all_setting_mean_warns.append( np.array(all_mm_base_warns).mean(axis=0))
+        all_setting_std_warns.append( np.array(all_mm_base_warns).std(axis=0))
+    
+    labels = ["No Thold, InfP=0, E.MM", "No Thold, InfP=0, B.MM", "No Thold, InfP=0.2, E.MM", "No Thold, InfP=0.2, B.MM", "InfP=0, E.MM", "InfP=0, B.MM", "InfP=0.2, E.MM", "InfP=0.2, B.MM" ]
+    colors = ["#0213c7", "#0213c7", "#3f7d48", "#3f7d48", "#f29544", "#f29544", "#33fff6", "#33fff6" ]
+    linestyles = ["-", "--", "-", "--", "-", "--", "-", "--"]
+
+    plt.figure(figsize=(10, 7.5))
+    ax = plt.subplot(111)
+    
+    ax.set_yscale('log')
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+
+    plt.xticks(range(0, max(all_setting_max_psize), 200), fontsize=16)
+    plt.yticks(fontsize=12, rotation=30)
+    plt.xlabel("Pool Size", fontsize=19)
+    plt.ylabel("# Bugs", fontsize=19)
+
+    for max_psize, ls, clr, lbl, awm, aws in zip(all_setting_max_psize, linestyles, colors, labels, all_setting_mean_warns, all_setting_std_warns):
+        plt.plot(range(max_psize), awm, ls=ls, lw=2, label=lbl, color=clr)
+        plt.fill_between(range(max_psize), awm+aws, awm-aws, color=clr, alpha=0.4)
+
+    plt.legend(loc="lower right", fontsize=16)
+    plt.savefig("%s_fuzzer_eval_psize.pdf" % (env_idn), bbox_inches="tight")
+
 
 def boxplot(env_idn, num_tot_warn):
     green_diamond = dict(markerfacecolor="g", marker="D")
@@ -151,7 +397,7 @@ def boxplot(env_idn, num_tot_warn):
     bplot = ax.boxplot(num_tot_warn, flierprops=green_diamond, patch_artist=True)
     ax.set_xticklabels(["INC=0.8\nINF=0.2", "INC=0.8\nINF=0.1", "INC=0.8\nINF=0", "INC=0\nINF=0.2", "INC=0\nINF=0.1", "INC=0\nINF=0"])
 
-    plt.xticks(fontsize=16)
+    eplt.xticks(fontsize=16)
     plt.yticks(fontsize=16, rotation=30)
     colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
     linestyles = ["-", "-", "-", "--", "--", "--"]
