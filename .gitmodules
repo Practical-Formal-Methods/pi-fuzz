@@ -7,9 +7,3 @@
 [submodule "linetrack"]
 	path = linetrack
 	url = https://github.com/TimoPGros/linetrack.git
-[submodule "mod_procgen"]
-	path = mod_procgen
-	url = https://github.com/hasanferit/mod_procgen.git
-[submodule "mod_racetrack"]
-	path = mod_racetrack
-	url = https://mgit.cs.uni-saarland.de/timopgros/racetrack-mod.git
