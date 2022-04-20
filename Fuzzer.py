@@ -11,9 +11,9 @@ from fuzz_config import FUZZ_BUDGET
 logger = logging.getLogger('fuzz_logger')
 
 class Fuzzer:
-    def __init__(self, r_seed, fuzz_type, fuzz_game, inf_prob, coverage, coverage_thold, mut_budget):
+    def __init__(self, rand_seed, fuzz_type, fuzz_game, inf_prob, coverage, coverage_thold, mut_budget):
 
-        self.rng = np.random.default_rng(r_seed)
+        self.rng = np.random.default_rng(rand_seed)
         self.fuzz_type = fuzz_type
         self.game = fuzz_game
         self.cov_type = coverage
@@ -36,8 +36,7 @@ class Fuzzer:
         seed = Seed(nn_state, hi_lvl_state, 0, 0)
         self.pool.append(seed)
 
-        cov_0_time = 0
-        cov_g_time = 0
+        time_wout_cov = 0
         start_time = time.perf_counter()
         trial = 0
         while (time.perf_counter() - start_time) < FUZZ_BUDGET:
@@ -59,11 +58,9 @@ class Fuzzer:
         
             if cand_nn is None: continue
 
-            cov_0_time += time.time() - s
+            time_wout_cov += time.time() - s
         
             is_int = self.is_interesting(cand_nn)
-
-            cov_g_time += time.time() - s
 
             trial += 1
             if cand_nn is not None and is_int:
@@ -72,16 +69,17 @@ class Fuzzer:
                 logger.info("New seed found at %s. Pool size: %d." % (str(cur_time), len(self.pool)))
                 population_summary.append([trial, cur_time, len(self.pool)])
 
-        print(self.inf_prob)
-        print("Avg fuzzer time cov0 time: %f", cov_0_time / trial) 
-        print("Avg fuzzer time cov> time: %f", cov_g_time / trial) 
-        print("Avg fuzzer time cov> time (over pool size): %f", cov_g_time / len(self.pool)) 
+        logger.info("Avg time spent in each fuzzer loop iteration excluding coverage: %f", time_wout_cov / trial) 
+        logger.info("Avg time spent in each fuzzer loop iteration including coverage: %f", FUZZ_BUDGET / trial) 
 
         logger.info("Pool Budget: %d, Size of the Pool: %d" % (FUZZ_BUDGET, len(self.pool)))
+        # note that this gets bigger and bigger for larger FUZZ_BUDGET
+        logger.infos("Avg time needed add one more seed to the pool: %f", FUZZ_BUDGET / len(self.pool)) 
 
         self.total_trials = trial
+        self.summary = population_summary
+        self.time_wout_cov = time_wout_cov
 
-        return population_summary
 
     def is_interesting(self, cand):
 
