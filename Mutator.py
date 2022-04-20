@@ -52,7 +52,7 @@ class LinetrackOracleMutator(Mutator):
         super().__init__(wrapper)
         self.orcl_mut_bdgt = orcl_mut_bdgt
 
-    def mutate(self, seed, rng, mode="easy"):
+    def mutate(self, seed, rng, mode="relax"):
         car_positions = []
         free_positions = []
         street, v = seed.hi_lvl_state
@@ -64,7 +64,7 @@ class LinetrackOracleMutator(Mutator):
                 if spot is None:
                     free_positions.append((lane_id, spot_id))
 
-        if mode == "easy":        # remove cars
+        if mode == "relax":        # remove cars
             mut_ind = rng.choice(len(car_positions), self.orcl_mut_bdgt, replace=False)
             mut_positions = np.array(car_positions)[mut_ind]
             for pos in mut_positions:
@@ -85,11 +85,11 @@ class BipedalHCOracleStumpMutator(Mutator):
     def __init__(self, wrapper):
         super().__init__(wrapper)
 
-    def mutate(self, seed, rng, mode="easy"):
+    def mutate(self, seed, rng, mode="relax"):
         GRASS, STUMP, STAIRS, PIT, _STATES_ = range(5)
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
 
-        _, _, _, _, _, _, _, _, _, _, _, _, _, terrain_type_poly, _, _, _ = hi_lvl_state
+        terrain_type_poly = hi_lvl_state[-4]
 
         poly_list = []
         grass_ind = []
@@ -102,7 +102,7 @@ class BipedalHCOracleStumpMutator(Mutator):
 
             poly_list.append(tt[1])
 
-        if mode == "easy":
+        if mode == "relax":
             mut_ind = rng.choice(stump_ind)
             for m_ind in mut_ind:
                 ttp = terrain_type_poly[m_ind]
@@ -138,7 +138,7 @@ class BipedalEasyOracleMutator(Mutator):
     def __init__(self, wrapper):
         super().__init__(wrapper)
 
-    def mutate(self, seed, rng, mode="easy"):
+    def mutate(self, seed, rng, mode="relax"):
         VIEWPORT_H = 400
         SCALE = 30.0
         TERRAIN_STEP   = 14/SCALE
@@ -148,7 +148,7 @@ class BipedalEasyOracleMutator(Mutator):
         y = TERRAIN_HEIGHT
         velocity = 0.0
 
-        if mode == "easy":
+        if mode == "relax":
             vel_coeff = 0.7
             rough_coeff = 1
         else:
@@ -176,7 +176,7 @@ class LunarOracleMoonHeightMutator(Mutator):
     def __init__(self, wrapper):
         super().__init__(wrapper)
 
-    def mutate(self, seed, rng, mode="easy"):
+    def mutate(self, seed, rng, mode="relax"):
         SCALE = 30.0
         VIEWPORT_H = 400
         H = VIEWPORT_H/SCALE
@@ -185,10 +185,10 @@ class LunarOracleMoonHeightMutator(Mutator):
         CHUNKS = 11
 
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
-        lander_pos, _, _, _, _, _, _, _, _, _, _, _, _, _, height = hi_lvl_state
+        lander_pos = hi_lvl_state[0]
         _, lander_height = lander_pos
 
-        if mode == "hard":
+        if mode == "unrelax":
             if lander_height-MARGIN < ORG_HELIPAD_H:
                 return None
             mut_helipad_height = rng.uniform(ORG_HELIPAD_H, lander_height-MARGIN)
@@ -211,11 +211,11 @@ class LunarOracleVelMutator(Mutator):
     def __init__(self, wrapper):
         super().__init__(wrapper)
 
-    def mutate(self, seed, rng, mode="easy"):
+    def mutate(self, seed, rng, mode="relax"):
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
-        _, lander_vel, _, _, _, _, _, _, _, _, _, _, _, _, _ = hi_lvl_state
+        lander_vel= hi_lvl_state[1]
         diff = rng.random()
-        if mode == "easy":
+        if mode == "relax":
             mut_lander_vel = (lander_vel[0], (1-diff) * lander_vel[1])
         else:
             mut_lander_vel = (lander_vel[0], (1+diff)  * lander_vel[1])
@@ -228,15 +228,15 @@ class LunarOracleMoonMutator(Mutator):
     def __init__(self, wrapper):
         super().__init__(wrapper)
 
-    def mutate(self, seed, rng, mode="easy"):
+    def mutate(self, seed, rng, mode="relax"):
         SCALE = 30.0
         VIEWPORT_H = 400
         H = VIEWPORT_H/SCALE
 
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
-        _, _, _, _, _, _, _, _, _, _, _, _, _, _, height = hi_lvl_state
+        height = hi_lvl_state[-1]
         mut_height = []
-        if mode == "hard":
+        if mode == "unrelax":
             for i in range(len(height)):
                 if i+1 == len(height):
                     sp = 0
@@ -278,12 +278,12 @@ class RacetrackOracleWallMutator(Mutator):
         super().__init__(wrapper)
         self.orcl_mut_bdgt = orcl_mut_bdgt
 
-    def mutate(self, seed, rng, mode="easy"):
+    def mutate(self, seed, rng, mode="relax"):
         hi_lvl_state = copy.deepcopy(seed.hi_lvl_state)
         map_obj = hi_lvl_state[3]
         edge_road_pos = hi_lvl_state[-1]
         edge_wall_pos = hi_lvl_state[-2]
-        if mode == "easy":
+        if mode == "relax":
             wall_to_road = rng.choice(edge_wall_pos, self.orcl_mut_bdgt)
             for wtr in wall_to_road:
                 map_line = list(map_obj.map[wtr[0]])
