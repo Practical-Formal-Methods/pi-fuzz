@@ -6,9 +6,6 @@ from mod_gym import gym
 
 from linetrack.dqn.agent import Agent as LinetrackAgent
 from linetrack.model.model import Linetrack
-# from racetrack.racetrack_dqn import Agent as RacetrackAgent
-# from racetrack.environment import Environment as Racetrack
-# from racetrack.argument_parser import Racetrack_parser
 from mod_stable_baselines3.stable_baselines3 import DQN, PPO
 from mod_stable_baselines3.stable_baselines3.common.policies import ActorCriticPolicy
 
@@ -52,7 +49,11 @@ class Wrapper():
         self.model = model
 
     def create_lunar_environment(self, seed):
+        from mod_stable_baselines3.stable_baselines3.common.monitor import Monitor
+        from mod_stable_baselines3.stable_baselines3.common.vec_env import DummyVecEnv
         env = gym.make('LunarLander-v2')
+        # env = Monitor(env)
+        env = DummyVecEnv([lambda: env])
         env.seed(seed)
         self.env = env
         self.action_space = range(env.action_space.n)  # Discrete(4)
@@ -72,20 +73,6 @@ class Wrapper():
         self.env = env
         self.action_space = env.action_space
 
-    def create_racetrack_model(self, load_path, r_seed):
-        rparser = Racetrack_parser()
-        namespace = rparser.parse(["racetrack", "ring", "-s", str(r_seed), "-n", "-rs", "-nr", "-100"])
-        ag = RacetrackAgent(self.env, namespace)
-        ag.load(load_path)
-        self.model = ag
-
-    def create_racetrack_environment(self, r_seed):
-        rparser = Racetrack_parser()
-        namespace = rparser.parse(["racetrack", "ring", "-s", str(r_seed), "-n", "-rs", "-nr", "-100"])
-        env = Racetrack(rt_args=namespace)
-        self.env = env
-        self.action_space = range(9) 
-
     def create_environment(self, env_seed=None):
         if self.env_iden == "lunar":
             self.create_lunar_environment(env_seed)
@@ -96,8 +83,6 @@ class Wrapper():
         elif self.env_iden == "linetrack":
             rng = np.random.default_rng(env_seed)
             self.create_linetrack_environment(rng)
-        elif self.env_iden == "racetrack":
-            self.create_racetrack_environment(env_seed)
 
     def create_model(self, load_path, r_seed=None):
         if self.env_iden == "lunar":
@@ -106,8 +91,6 @@ class Wrapper():
             self.create_bipedal_model(load_path, r_seed)
         elif self.env_iden == "linetrack":
             self.create_linetrack_model(load_path, r_seed)
-        elif self.env_iden == "racetrack":
-            self.create_racetrack_model(load_path, r_seed)
 
     def get_state(self):
         nn_state, hi_lvl_state = None, None
@@ -117,9 +100,6 @@ class Wrapper():
         elif self.env_iden == "linetrack":
             nn_state, street = self.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
             hi_lvl_state = [street, nn_state[-1]]
-        elif self.env_iden == "racetrack":
-            nn_state = self.env.get_state()
-            hi_lvl_state = self.env.get_high_level_state()
 
         return nn_state, hi_lvl_state
 
@@ -128,15 +108,12 @@ class Wrapper():
             self.env.reset(hi_lvl_state=hi_lvl_state)
         elif self.env_iden == "linetrack":
             self.env.set_state(hi_lvl_state)
-        elif self.env_iden == "racetrack":
-            position, velocity, path, map_obj, _, _ = hi_lvl_state
-            self.env.reset_to_state(position, velocity, map_obj, path)
 
     def model_step(self, state, deterministic=True):
         act = None
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             act, _ = self.model.predict(state, deterministic=deterministic)
-        elif self.env_iden == "linetrack" or self.env_iden == "racetrack":
+        elif self.env_iden == "linetrack":
             act = self.model.act(state)
 
         return act
@@ -145,7 +122,7 @@ class Wrapper():
         reward, next_state, done = None, None, None
         if self.env_iden == "lunar" or self.env_iden == "bipedal"  or self.env_iden == "bipedal-hc":
             next_state, reward, done, info = self.env.step(action)
-        elif self.env_iden == "linetrack" or self.env_iden == "racetrack":
+        elif self.env_iden == "linetrack":
             reward, next_state, done = self.env.step(action)
 
         return reward, next_state, done
@@ -175,17 +152,13 @@ class Wrapper():
                 self.env.render()
                 time.sleep(0.01)
 
-            if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "racetrack":
-                total_reward += reward
-            else:
+            if self.env_iden == "linetrack":
                 total_reward = self.env.acc_return  # += np.power(GAMMA, num_steps) * reward
+            else:
+                total_reward += reward
 
             all_rews.append(reward)
             full_play.append(act)
-
-            # racetrack agent can stuck, thus prevent this
-            if self.env_iden == "racetrack" and len(full_play) == 200: 
-                return 0, full_play, visited_states
 
             if done:
                 if mode == "qualitative":
@@ -194,3 +167,15 @@ class Wrapper():
                     else:
                         total_reward = 100  # walker reached end, lander didnt crash
                 return total_reward, full_play, all_rews # visited_states
+
+    def test(self):
+        c = 0
+        next_state = self.env.reset()
+        while c < 200:
+            act = [0]  # self.model_step(next_state)
+            reward, next_state, done = self.env_step(act)
+            if done:
+                print(c, reward, "finished")
+            self.env.render()
+            time.sleep(0.005)
+            c += 1
