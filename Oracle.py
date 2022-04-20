@@ -1,6 +1,4 @@
-import time
 import logging
-import itertools
 import numpy as np
 import Mutator
 from fuzz_config import ORACLE_SEARCH_BUDGET, BUG_CONFIRMATION_BUDGET
@@ -12,13 +10,12 @@ logger = logging.getLogger("fuzz_logger")
 
 class Oracle(ABC):
 
-    def __init__(self, game, rand_seed, delta=None, de_dup=None, orcl_mut_bdgt=None):
+    def __init__(self, game, rand_seed, de_dup=None, orcl_mut_bdgt=None):
         # super().__init__()
         self.game = game
         self.mode = 'qualitative'
         self.rand_seed = rand_seed
         self.rng = np.random.default_rng(rand_seed)
-        self.delta = delta
         self.de_dup = de_dup
 
         if game.env_iden == "highway":
@@ -56,9 +53,6 @@ class MMBugOracle(Oracle):
 
     def explore(self, fuzz_seed):
 
-        time_spent = 0
-        s = time.time()
-
         org_f_cnt = 0
         # below loop corresponds to line 2 in Algorithm 1 
         for rand_seed in range(BUG_CONFIRMATION_BUDGET):  
@@ -83,13 +77,9 @@ class MMBugOracle(Oracle):
             
             # below condition effectively corresponds to line 6 in Algorithm 1
             if mut_f_cnt < org_f_cnt:
-                e = time.time()
-                time_spent += e-s
-                return 1, time_spent  # bug found
+                return 1  # bug found
         
-        e = time.time()
-        time_spent += e-s
-        return 0, time_spent  # bug not found
+        return 0  # bug not found
 
 
 class MMSeedBugBasicOracle(Oracle):
@@ -97,8 +87,6 @@ class MMSeedBugBasicOracle(Oracle):
         super().__init__(game, rand_seed)
     
     def explore(self, fuzz_seed):
-
-        s = time.time()
 
         self.setRandAndFuzzSeed(fuzz_seed)
         org_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data)
@@ -118,21 +106,16 @@ class MMSeedBugBasicOracle(Oracle):
 
             mut_reward, _, _ = self.game.run_pol_fuzz(nn_state)
 
-            if mut_reward - org_reward > self.delta:
-                e = time.time()
-                time_spent = e-s
-                return 1, time_spent
+            if mut_reward > org_reward:
+                return 1
         
-        time_spent = e-s
-        return 0, time_spent
+        return 0
 
 class MMSeedBugExtOracle(Oracle):
     def __init__(self, game, rand_seed):
         super().__init__(game, rand_seed)
 
     def explore(self, fuzz_seed):
-        s = time.time()
-
         self.setRandAndFuzzSeed(fuzz_seed)
 
         org_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data)
@@ -152,34 +135,27 @@ class MMSeedBugExtOracle(Oracle):
 
             mut_reward, _, _ = self.game.run_pol_fuzz(nn_state)
 
-            if mut_reward - org_reward > self.delta:
+            if mut_reward > org_reward:
                 num_bugs += 1
         
-        e = time.time()
-        time_spent = e-s
-        return num_bugs, time_spent
+        return num_bugs
+
 
 class MMSeedBug2BugOracle(Oracle):
 
     def __init__(self, game, rand_seed):
         super().__init__(game, rand_seed)
         
-    def explore(self, fuzz_seed):
-        s = time.time()
-        
+    def explore(self, fuzz_seed):        
         mmseedbugoracle = MMSeedBugBasicOracle(Oracle)
         is_seed_bug, _ = mmseedbugoracle.explore(fuzz_seed)
         
         if is_seed_bug == 1:
             mmbugoracle = MMBugOracle(Oracle)
             is_bug, _ = mmbugoracle.explore(fuzz_seed)
-            e = time.time()
-            time_spent = e-s
-            if is_bug == 1: return 1, time_spent
+            if is_bug == 1: return 1
 
-        e = time.time()
-        time_spent = e-s
-        return 0, time_spent
+        return 0
 
 
 class FailureSeedBugOracle(Oracle):
@@ -187,27 +163,23 @@ class FailureSeedBugOracle(Oracle):
         super().__init__(game, rand_seed)
         
     def explore(self, fuzz_seed):
-        s = time.time()
         
         self.setRandAndFuzzSeed(fuzz_seed)
 
         org_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data)
         
-        e = time.time()
-        time_spent = e-s
-        
         if org_reward == 0: 
             fuzz_seed.is_crash = True
-            return 1, time_spent
-        return 0, time_spent
+            return 1
+
+        return 0
 
 
-class RuleSeedBug(Oracle):
+class RuleSeedBugOracle(Oracle):
     def __init__(self, game, rand_seed):
         super().__init__(game, rand_seed)
         
     def explore(self, fuzz_seed):
-        s = time.time()
         
         self.setRandAndFuzzSeed(fuzz_seed)
 
@@ -227,38 +199,16 @@ class RuleSeedBug(Oracle):
             
             # should be winning the game. we return only true positives for this oracle
             if mut_reward == 100 and mut_reward > org_reward:
-                e = time.time()
-                time_spent = e-s
                 # rule: if there is policy that can succeed in harder state, it should take the same action on the easier state
                 if self.game.env_iden == "bipedal":
                     if list(mut_play[0]) != list(org_play[0]): 
-                        return 1, time_spent
+                        return 1
                 else:
                     if mut_play[0] != org_play[0]: 
-                        return 1, time_spent
+                        return 1
         
-        e = time.time()
-        time_spent = e-s
-        
-        return 0, time_spent
+        return 0
 
-
-class PerfectBugOracle(Oracle):
-
-    def __init__(self, game, rand_seed):
-        if not self.game.env_iden == "highway":
-            print("This oracle is only suitable for Highway!")
-            exit()
-        super().__init__(game, rand_seed)
-
-    def explore(self, fuzz_seed):
-        s = time.time()
-
-
-        e = time.time()
-        time_spent = e-s
-        
-        return 0, time_spent
 
 class PerfectSeedBugOracle(Oracle):
 
@@ -269,22 +219,17 @@ class PerfectSeedBugOracle(Oracle):
         super().__init__(game, rand_seed)
         
     def explore(self, fuzz_seed):
-        s = time.time()
+
         self.setRandAndFuzzSeed(fuzz_seed)
 
         org_reward, _, _ = self.game.run_pol_fuzz(fuzz_seed.data)
+        # if the agent is already winning then no need for exploration
         if org_reward <= 0:
             self.setRandAndFuzzSeed(fuzz_seed)
             if magic_oracle(self.game.env):
-                e = time.time()
-                time_spent = e-s
-
-                return 1, time_spent
-
-        e = time.time()
-        time_spent = e-s
+                return 1
         
-        return 0, time_spent
+        return 0
 
 
 class PerfectBugOracle(Oracle):
@@ -295,8 +240,6 @@ class PerfectBugOracle(Oracle):
         super().__init__(game, rand_seed)
     
     def explore(self, fuzz_seed):
-        s = time.time()
-
         num_perfect_fails = 0
         for rs in range(BUG_CONFIRMATION_BUDGET):
             self.setRandAndFuzzSeed(fuzz_seed, rs)
@@ -307,11 +250,8 @@ class PerfectBugOracle(Oracle):
             self.setRandAndFuzzSeed(fuzz_seed, rs)
             rew, _, _ = self.game.run_pol_fuzz(fuzz_seed.data, self.mode)
             if rew == 0: num_policy_fails += 1
-
-        e = time.time()
-        time_spent = e-s
         
         if num_policy_fails > num_perfect_fails:
-            return 1, time_spent
+            return 1
         
-        return 0, time_spent
+        return 0
