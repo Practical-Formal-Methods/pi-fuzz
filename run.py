@@ -3,9 +3,11 @@ import pickle
 import argparse
 import EnvWrapper as EW
 import Fuzzer
-from Oracle import MMSeedBugBasicOracle, MMSeedBugExtOracle, MMSeedBug2BugOracle, MMBugOracle, FailureSeedBugOracle, RuleSeedBug,PerfectSeedBugOracle, PerfectBugOracle, RuleSeedBugOracle
-
+from Oracle import MMSeedBugBasicOracle, MMSeedBugExtOracle, MMSeedBug2BugOracle, MMBugOracle, FailureSeedBugOracle, PerfectSeedBugOracle, PerfectBugOracle, RuleSeedBugOracle
 from fuzz_utils import setup_logger
+
+########## box2s-py HAS TO BE INSTALLED!!!!!!!!!!! ##############
+
 
 def launch_fuzzer(fuzzer):
 
@@ -58,7 +60,6 @@ parser.add_argument("-C", "--coverage", default="raw", choices=['raw', 'abs'])
 parser.add_argument("-CT", "--coverage_thold", default=2.0, type=float)
 parser.add_argument("-L", "--logfile", default="logs/policy_testing_%s.log" % fuzz_start_time)
 parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and bipedal
-parser.add_argument("-D", "--delta", default=1.0, type=float)
 parser.add_argument("-IP", "--inf_probability", default=0.1, type=float)
 
 args = parser.parse_args()
@@ -96,7 +97,7 @@ game = EW.Wrapper(env_iden)
 game.create_environment(env_seed=rand_seed)
 game.create_model(agent_path, rand_seed)
 
-fuzzer = Fuzzer.Fuzzer(r_seed=rand_seed, fuzz_type=fuzz_type, fuzz_game=game, inf_prob=inf_prob, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
+fuzzer = Fuzzer.Fuzzer(rand_seed=rand_seed, fuzz_type=fuzz_type, fuzz_game=game, inf_prob=inf_prob, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
 
 fuzz_out = launch_fuzzer(fuzzer)
 
