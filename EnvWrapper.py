@@ -49,22 +49,18 @@ class Wrapper():
         self.model = model
 
     def create_lunar_environment(self, seed):
-        from mod_stable_baselines3.stable_baselines3.common.monitor import Monitor
-        from mod_stable_baselines3.stable_baselines3.common.vec_env import DummyVecEnv
         env = gym.make('LunarLander-v2')
-        # env = Monitor(env)
-        env = DummyVecEnv([lambda: env])
         env.seed(seed)
         self.env = env
         self.action_space = range(env.action_space.n)  # Discrete(4)
 
-    def create_linetrack_model(self, load_path, r_seed):
+    def create_highway_model(self, load_path, r_seed):
         ag = LinetrackAgent(self.env, r_seed, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
                   eps_decay=0.999, learning_count=0)
         ag.load(load_path, None)  # second parameter is useless here
         self.model = ag
 
-    def create_linetrack_environment(self, rng):
+    def create_highway_environment(self, rng):
         # environment parameters
         num_lines = 2
         length_lines = 100
@@ -80,24 +76,24 @@ class Wrapper():
             self.create_bipedal_environment(env_seed)
         elif self.env_iden == "bipedal-hc":
             self.create_bipedal_environment(env_seed, hardcore=True)
-        elif self.env_iden == "linetrack":
+        elif self.env_iden == "highway":
             rng = np.random.default_rng(env_seed)
-            self.create_linetrack_environment(rng)
+            self.create_highway_environment(rng)
 
     def create_model(self, load_path, r_seed=None):
         if self.env_iden == "lunar":
             self.create_lunar_model(load_path, r_seed)
         elif self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             self.create_bipedal_model(load_path, r_seed)
-        elif self.env_iden == "linetrack":
-            self.create_linetrack_model(load_path, r_seed)
+        elif self.env_iden == "highway":
+            self.create_highway_model(load_path, r_seed)
 
     def get_state(self):
         nn_state, hi_lvl_state = None, None
 
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             nn_state, hi_lvl_state = self.env.get_state()
-        elif self.env_iden == "linetrack":
+        elif self.env_iden == "highway":
             nn_state, street = self.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
             hi_lvl_state = [street, nn_state[-1]]
 
@@ -106,14 +102,14 @@ class Wrapper():
     def set_state(self, hi_lvl_state):
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             self.env.reset(hi_lvl_state=hi_lvl_state)
-        elif self.env_iden == "linetrack":
+        elif self.env_iden == "highway":
             self.env.set_state(hi_lvl_state)
 
     def model_step(self, state, deterministic=True):
         act = None
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
             act, _ = self.model.predict(state, deterministic=deterministic)
-        elif self.env_iden == "linetrack":
+        elif self.env_iden == "highway":
             act = self.model.act(state)
 
         return act
@@ -122,12 +118,12 @@ class Wrapper():
         reward, next_state, done = None, None, None
         if self.env_iden == "lunar" or self.env_iden == "bipedal"  or self.env_iden == "bipedal-hc":
             next_state, reward, done, info = self.env.step(action)
-        elif self.env_iden == "linetrack":
+        elif self.env_iden == "highway":
             reward, next_state, done = self.env.step(action)
 
         return reward, next_state, done
 
-    def run_pol_fuzz(self, init_state, mode="qualitative", render=False, randomized=False, rng=None):
+    def run_pol_fuzz(self, init_state, render=False, randomized=False, rng=None):
         next_state = init_state
         full_play = []
         all_rews = []
@@ -152,7 +148,7 @@ class Wrapper():
                 self.env.render()
                 time.sleep(0.01)
 
-            if self.env_iden == "linetrack":
+            if self.env_iden == "highway":
                 total_reward = self.env.acc_return  # += np.power(GAMMA, num_steps) * reward
             else:
                 total_reward += reward
@@ -161,11 +157,12 @@ class Wrapper():
             full_play.append(act)
 
             if done:
-                if mode == "qualitative":
-                    if -100 in all_rews:
-                        total_reward = 0 # walker fell before reaching end, lander crashed
-                    else:
-                        total_reward = 100  # walker reached end, lander didnt crash
+                # walker fell before reaching end, lander crashed
+                if -100 in all_rews:
+                    total_reward = 0 
+                # walker reached end, lander didnt crash
+                else:
+                    total_reward = 100
                 return total_reward, full_play, all_rews # visited_states
 
     def test(self):
