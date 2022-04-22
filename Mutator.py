@@ -47,7 +47,7 @@ class RandomActionMutator(Mutator):
 
         return nn_state, hi_lvl_state
 
-class LinetrackOracleMutator(Mutator):
+class HighwayOracleMutator(Mutator):
     def __init__(self, wrapper, orcl_mut_bdgt):
         super().__init__(wrapper)
         self.orcl_mut_bdgt = orcl_mut_bdgt
