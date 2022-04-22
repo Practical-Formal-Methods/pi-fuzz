@@ -74,7 +74,7 @@ class Fuzzer:
 
         logger.info("Pool Budget: %d, Size of the Pool: %d" % (FUZZ_BUDGET, len(self.pool)))
         # note that this gets bigger and bigger for larger FUZZ_BUDGET
-        logger.infos("Avg time needed add one more seed to the pool: %f", FUZZ_BUDGET / len(self.pool)) 
+        logger.info("Avg time needed add one more seed to the pool: %f", FUZZ_BUDGET / len(self.pool)) 
 
         self.total_trials = trial
         self.summary = population_summary
