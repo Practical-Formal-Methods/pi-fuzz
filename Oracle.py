@@ -1,9 +1,9 @@
+import copy
 import logging
 import numpy as np
 import Mutator
 from fuzz_config import ORACLE_SEARCH_BUDGET, BUG_CONFIRMATION_BUDGET
 from abc import ABC, abstractmethod
-from linetrack.magic import magic_oracle
 
 logger = logging.getLogger("fuzz_logger")
 
@@ -208,7 +208,29 @@ class RuleSeedBugOracle(Oracle):
         return 0
 
 
-class PerfectSeedBugOracle(Oracle):
+class PerfectOracle(Oracle):
+    def magic_oracle(env):
+        counter = 0
+        envs = [env]
+
+        while len(envs) != 0:
+            env = envs.pop()
+            for action in env.applicable_actions():
+                counter += 1
+                if counter % 100 == 0:
+                    print(counter)
+                current_env = copy.deepcopy(env)
+                reward, _, done = current_env.step(action)
+                if done:
+                    if reward > 0:
+                        return True
+                    else:
+                        continue
+                envs.append(current_env)
+        return False
+
+
+class PerfectSeedBugOracle(PerfectOracle):
     def __init__(self, game, rand_seed):
         super().__init__(game, rand_seed)
         
@@ -223,13 +245,13 @@ class PerfectSeedBugOracle(Oracle):
         # if the agent is already winning then no need for exploration
         if org_reward <= 0:
             self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state)
-            if magic_oracle(self.game.env):
+            if self.magic_oracle(self.game.env):
                 return 1
         
         return 0
 
 
-class PerfectBugOracle(Oracle):
+class PerfectBugOracle(PerfectOracle):
     def __init__(self, game, rand_seed):
         super().__init__(game, rand_seed)
 
@@ -241,7 +263,7 @@ class PerfectBugOracle(Oracle):
         num_perfect_fails = 0
         for rs in range(BUG_CONFIRMATION_BUDGET):
             self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, rs)
-            if not magic_oracle(self.game.env): num_perfect_fails += 1
+            if not self.magic_oracle(self.game.env): num_perfect_fails += 1
 
         num_policy_fails = 0
         for rs in range(BUG_CONFIRMATION_BUDGET):
