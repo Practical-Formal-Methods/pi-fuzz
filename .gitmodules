@@ -1,6 +1,3 @@
-[submodule "mod_stable_baselines3"]
-	path = mod_stable_baselines3
-	url = https://github.com/Practical-Formal-Methods/mod_stable_baselines3.git
 [submodule "mod_gym"]
 	path = mod_gym
 	url = https://github.com/Practical-Formal-Methods/mod_gym.git
