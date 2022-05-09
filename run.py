@@ -1,3 +1,4 @@
+import os
 import time
 import pickle
 import argparse
@@ -18,7 +19,6 @@ def launch_fuzzer(fuzzer):
 
     fuzzer.fuzz()
 
-    logger.info("\n\n")
     logger.info("=" * 30)
     logger.info("Fuzzing is over.")
     logger.info("=" * 30)
@@ -26,6 +26,7 @@ def launch_fuzzer(fuzzer):
     return [fuzzer.summary, fuzzer.pool, fuzzer.total_trials, fuzzer.schedule.cycles, fuzzer.time_wout_cov]
 
 def test_policy(oracle):
+    logger.info("\n")
     logger.info("=" * 30)
     logger.info("Oracle starts testing.")
     logger.info("=" * 30)
@@ -58,7 +59,7 @@ parser.add_argument("-F", "--fuzz_type", default='inc', choices=['inc', 'non-inc
 parser.add_argument("-O", "--oracle_type", default="mmseedbugbasic")
 parser.add_argument("-C", "--coverage", default="raw", choices=['raw', 'abs'])
 parser.add_argument("-CT", "--coverage_thold", default=2.0, type=float)
-parser.add_argument("-L", "--logfile", default="logs/policy_testing_%s.log" % fuzz_start_time)
+parser.add_argument("-L", "--logfolder", default="")
 parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and bipedal
 parser.add_argument("-IP", "--inf_probability", default=0.1, type=float)
 
@@ -72,11 +73,18 @@ oracle_type = args.oracle_type
 coverage = args.coverage
 coverage_thold = args.coverage_thold
 fuzz_mut_bdgt = args.fuzz_mut_bdgt
-logfilename = args.logfile
 inf_prob = args.inf_probability
+logfolder = args.logfolder
 loggername = "fuzz_logger"
 
-logger = setup_logger(loggername, logfilename)
+if not logfolder:
+    logfolder = "pifuzz_logs"
+if not os.path.exists(logfolder):
+    os.makedirs(logfolder)
+
+logf = "./%s/E%s_R%s_F%s_C%s_I%s_%s.log" % (logfolder, env_iden, rand_seed, fuzz_type, str(coverage_thold), str(inf_prob), fuzz_start_time)
+
+logger = setup_logger(loggername, logf)
 logger.info("#############################")
 logger.info("### POLICY TESTING REPORT ###")
 logger.info("#############################")
@@ -102,7 +110,7 @@ fuzzer = Fuzzer.Fuzzer(rand_seed=rand_seed, fuzz_type=fuzz_type, fuzz_game=game,
 fuzz_out = launch_fuzzer(fuzzer)
 
 print("Pool size:", len(fuzzer.pool))
-fuzzer_summary = open("E%s_R%s_F%s_C%f_I%f_%s_poolonly.p" % (env_iden, rand_seed, fuzz_type, coverage_thold, inf_prob, fuzz_start_time), "wb")
+fuzzer_summary = open("./%s/E%s_R%s_F%s_C%s_I%s_%s_poolonly.p" % (logfolder, env_iden, rand_seed, fuzz_type, str(coverage_thold), str(inf_prob), fuzz_start_time), "wb")
 pickle.dump(fuzz_out, fuzzer_summary)
 
 # ===============================
@@ -131,11 +139,11 @@ avg_oracle_time = oracle_time / len(fuzzer.pool)
 
 test_out = fuzz_out + [num_bugs, oracle_time, avg_oracle_time]
 
-test_summary = open("E%s_R%s_O%s_F%s_C%f_I%f_%s.p" % (env_iden, rand_seed, oracle_type, fuzz_type, coverage_thold, inf_prob, fuzz_start_time), "wb")
+test_summary = open("./%s/E%s_R%s_O%s_F%s_C%s_I%s_%s.p" % (logfolder, env_iden, rand_seed, oracle_type, fuzz_type, str(coverage_thold), str(inf_prob), fuzz_start_time), "wb")
 pickle.dump(test_out, test_summary)
 
 # COMMANDS
-# -E linetrack -R 123 -A policies/linetrack_org.pth -F inc -CT 3.6 -FMB 3 -OMB 2
+# -E highway -R 123 -A policies/linetrack_org.pth -F inc -CT 3.6 -FMB 3 -OMB 2
 # -E lunar -R 123 -A policies/lunar_org -F inc -CT 0.6 -FMB 25
 # -E bipedal -R 123 -A policies/bipedal_org -F inc -CT 2.0 -FMB 25
 
