@@ -12,19 +12,19 @@ class SeedPolicyMutator(Mutator):
         self.fuzz_mut_bdgt = fuzz_mut_bdgt
 
     def mutate(self, seed, rng):
-        self.wrapper.set_state(seed.hi_lvl_state)
-        nn_state, hi_lvl_state = self.wrapper.get_state()
+        self.wrapper.set_state(seed.hi_lvl_state, seed.rand_state)
+        nn_state, hi_lvl_state, _ = self.wrapper.get_state()
         mut_bdgt = rng.integers(self.fuzz_mut_bdgt)
 
         next_state = nn_state
         for _ in range(mut_bdgt):
-            act = self.wrapper.model_step(next_state, deterministic=False)  # Stochastic
+            act = self.wrapper.model_step(next_state, deterministic=False)  # Deliberately stochastic
             _, next_state, done = self.wrapper.env_step(act)
             if done:
-                return None, None
+                return None, None, None
 
-        nn_state, hi_lvl_state = self.wrapper.get_state()
-        return nn_state, hi_lvl_state
+        nn_state, hi_lvl_state, rand_state = self.wrapper.get_state()
+        return nn_state, hi_lvl_state, rand_state
 
 class RandomActionMutator(Mutator):
     def __init__(self, wrapper, fuzz_mut_bdgt):
@@ -32,7 +32,7 @@ class RandomActionMutator(Mutator):
         self.fuzz_mut_bdgt = fuzz_mut_bdgt
 
     def mutate(self, seed, rng):
-        self.wrapper.set_state(seed.hi_lvl_state)
+        self.wrapper.set_state(seed.hi_lvl_state, seed.rand_state)
         mut_bdgt = rng.integers(self.fuzz_mut_bdgt)
         for _ in range(mut_bdgt):
             if self.wrapper.env_iden == "bipedal":
@@ -41,11 +41,11 @@ class RandomActionMutator(Mutator):
                 act = rng.choice(self.wrapper.action_space, 1)[0]
             _, nn_state, done = self.wrapper.env_step(act)
             if done:
-                return None, None
+                return None, None, None
 
-        nn_state, hi_lvl_state = self.wrapper.get_state()
+        nn_state, hi_lvl_state, rand_state = self.wrapper.get_state()
 
-        return nn_state, hi_lvl_state
+        return nn_state, hi_lvl_state, rand_state
 
 class HighwayOracleMutator(Mutator):
     def __init__(self, wrapper, orcl_mut_bdgt):

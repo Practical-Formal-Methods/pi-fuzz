@@ -32,8 +32,9 @@ class Fuzzer:
     def fuzz(self):
         population_summary = []
         self.game.env.reset()
-        nn_state, hi_lvl_state = self.game.get_state()
-        seed = Seed(nn_state, hi_lvl_state, 0, 0)
+        nn_state, hi_lvl_state, rand_state = self.game.get_state()
+        seed = Seed(nn_state, hi_lvl_state, rand_state, 0, 0)
+        seed.identifier = len(self.pool)
         self.pool.append(seed)
 
         time_wout_cov = 0
@@ -47,14 +48,14 @@ class Fuzzer:
                 seed = self.schedule.choose(self.pool, self.rng)
             else:
                 self.game.env.reset()  # rng=self.rng)
-                cand_nn, cand_hi_lvl = self.game.get_state()
-                seed = Seed(cand_nn, cand_hi_lvl, trial, time.perf_counter()-start_time)
+                cand_nn, cand_hi_lvl, rand_state = self.game.get_state()
+                seed = Seed(cand_nn, cand_hi_lvl, rand_state, trial, time.perf_counter()-start_time)
 
             rnd = self.rng.random()
             if rnd < self.inf_prob:
-                cand_nn, cand_hi_lvl = self.seed_policy_mutator.mutate(seed, self.rng)
+                cand_nn, cand_hi_lvl, rand_state = self.seed_policy_mutator.mutate(seed, self.rng)
             else:
-                cand_nn, cand_hi_lvl = self.random_action_mutator.mutate(seed, self.rng)
+                cand_nn, cand_hi_lvl, rand_state = self.random_action_mutator.mutate(seed, self.rng)
         
             if cand_nn is None: continue
 
@@ -65,8 +66,10 @@ class Fuzzer:
             trial += 1
             if cand_nn is not None and is_int:
                 cur_time = time.perf_counter()-start_time
-                self.pool.append(Seed(cand_nn, cand_hi_lvl, trial, cur_time))
-                logger.info("New seed found at %s. Pool size: %d." % (str(cur_time), len(self.pool)))
+                new_seed = Seed(cand_nn, cand_hi_lvl, rand_state, trial, cur_time)
+                new_seed.identifier = len(self.pool)
+                self.pool.append(new_seed)
+                logger.info("New seed found at trial %d and time %s. Pool size: %d." % (trial, str(cur_time), len(self.pool)))
                 population_summary.append([trial, cur_time, len(self.pool)])
 
         logger.info("Avg time spent in each fuzzer loop iteration excluding coverage: %f", time_wout_cov / trial) 

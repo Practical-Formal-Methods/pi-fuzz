@@ -89,21 +89,21 @@ class Wrapper():
             self.create_highway_model(load_path, r_seed)
 
     def get_state(self):
-        nn_state, hi_lvl_state = None, None
-
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
-            nn_state, hi_lvl_state = self.env.get_state()
+            nn_state, hi_lvl_state, rand_state = self.env.get_state()
         elif self.env_iden == "highway":
-            nn_state, street = self.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
+            # in highway, rand_state is default_rng
+            nn_state, street, rand_state = self.env.get_state(one_hot=True, linearize=True, window=True, distance=True)
             hi_lvl_state = [street, nn_state[-1]]
 
-        return nn_state, hi_lvl_state
+        return nn_state, hi_lvl_state, rand_state
 
-    def set_state(self, hi_lvl_state):
+    def set_state(self, hi_lvl_state, rand_state=None):
         if self.env_iden == "lunar" or self.env_iden == "bipedal" or self.env_iden == "bipedal-hc":
-            self.env.reset(hi_lvl_state=hi_lvl_state)
+            self.env.reset(hi_lvl_state=hi_lvl_state, rand_state=rand_state)
         elif self.env_iden == "highway":
-            self.env.set_state(hi_lvl_state)
+            # in highway, rand_state is default_rng
+            self.env.set_state(hi_lvl_state, rand_state)
 
     def model_step(self, state, deterministic=True):
         act = None
@@ -123,47 +123,34 @@ class Wrapper():
 
         return reward, next_state, done
 
-    def run_pol_fuzz(self, init_state, render=False, randomized=False, rng=None):
+    def play(self, init_state, render=False):
         next_state = init_state
         full_play = []
         all_rews = []
-        visited_states = []
-        total_reward = 0
-        while True:
-            
-            _, hls = self.get_state()
-            n_hls = []
-            for elm in hls:
-                if isinstance(elm, np.ndarray):
-                    elm = list(elm)
-                n_hls.append(elm)
-           
-            visited_states.append(n_hls)
-            
-            if not randomized:  act = self.model_step(next_state)
-            else: act = rng.integers(4)  # this is specifically used for Lunar where there are 4 available actions
+        while True:            
+            act = self.model_step(next_state)
 
             reward, next_state, done = self.env_step(act)
             if render:
                 self.env.render()
                 time.sleep(0.01)
 
-            if self.env_iden == "highway":
-                total_reward = self.env.acc_return  # += np.power(GAMMA, num_steps) * reward
-            else:
-                total_reward += reward
+            # if self.env_iden == "highway":
+            #     total_reward = self.env.acc_return  # += np.power(GAMMA, num_steps) * reward
+            # else:
+            #     total_reward += reward
 
             all_rews.append(reward)
             full_play.append(act)
 
             if done:
-                # walker fell before reaching end, lander crashed
+                # walker fell before reaching end, lander crashed, car crashed
                 if -100 in all_rews:
-                    total_reward = 0 
-                # walker reached end, lander didnt crash
+                    final_rew = 0 
+                # walker reached end, lander didnt crash, car didnt crash
                 else:
-                    total_reward = 100
-                return total_reward, full_play, all_rews # visited_states
+                    final_rew = 100
+                return final_rew, full_play, all_rews # visited_states
 
     def test(self):
         c = 0
