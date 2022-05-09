@@ -97,7 +97,7 @@ class MMSeedBugBasicOracle(Oracle):
 
         if org_reward == 0: fuzz_seed.is_crash = True
         elif org_reward == 100: 
-            logger.info("Skipping fuzz seed %d as agent wins on there (easier state).")
+            logger.info("Skipping fuzz seed %d as agent wins on there (easier state)." % fuzz_seed.identifier)
             return 0
 
         num_rejects = 0
@@ -129,7 +129,10 @@ class MMSeedBugExtOracle(Oracle):
 
         org_reward, _, _ = self.game.play(fuzz_seed.data)
 
-        if org_reward == 0: fuzz_seed.is_crash = True
+        if org_reward == 0: 
+            fuzz_seed.is_crash = True
+            logger.info("Skipping fuzz seed %d as agent wins on there (harder state)." % fuzz_seed.identifier)
+            return 0
 
         num_bugs = 0
         num_rejects = 0
@@ -196,7 +199,11 @@ class RuleSeedBugOracle(Oracle):
         self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
 
         org_reward, org_play, _ = self.game.play(fuzz_seed.data)
-        
+
+        if org_reward == 100:
+            logger.info("Skipping fuzz seed %d as agent wins on there (easier state)." % fuzz_seed.identifier)
+            return 0
+
         num_rejects = 0
         for _ in range(ORACLE_SEARCH_BUDGET):
             mut_state = self.mutator.mutate(fuzz_seed, self.rng, mode='unrelax')
