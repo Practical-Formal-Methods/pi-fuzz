@@ -152,14 +152,18 @@ class Wrapper():
                     final_rew = 100
                 return final_rew, full_play, all_rews # visited_states
 
-    def test(self):
-        c = 0
-        next_state = self.env.reset()
-        while c < 200:
-            act = [0]  # self.model_step(next_state)
-            reward, next_state, done = self.env_step(act)
-            if done:
-                print(c, reward, "finished")
-            self.env.render()
-            time.sleep(0.005)
-            c += 1
+    def eval(self, eval_budget=100):
+        for _ in range(eval_budget):
+            self.env.reset()
+            next_state, _, _ = self.get_state()
+            tot_rew = 0
+            done = False
+            while not done:
+                act = self.model_step(next_state)
+                reward, next_state, done = self.env_step(act)
+                tot_rew += reward
+                if done:
+                    print(tot_rew)
+                # self.env.render()
+                # time.sleep(0.005)
+                # c += 1
