@@ -1,15 +1,6 @@
-[submodule "mod_stable_baselines3"]
-	path = mod_stable_baselines3
-	url = https://github.com/Practical-Formal-Methods/mod_stable_baselines3.git
 [submodule "mod_gym"]
 	path = mod_gym
 	url = https://github.com/Practical-Formal-Methods/mod_gym.git
 [submodule "linetrack"]
 	path = linetrack
 	url = https://github.com/TimoPGros/linetrack.git
-[submodule "mod_procgen"]
-	path = mod_procgen
-	url = https://github.com/hasanferit/mod_procgen.git
-[submodule "mod_racetrack"]
-	path = mod_racetrack
-	url = https://mgit.cs.uni-saarland.de/timopgros/racetrack-mod.git

@@ -11,9 +11,9 @@ from fuzz_config import FUZZ_BUDGET
 logger = logging.getLogger('fuzz_logger')
 
 class Fuzzer:
-    def __init__(self, r_seed, fuzz_type, fuzz_game, inf_prob, coverage, coverage_thold, mut_budget):
+    def __init__(self, rand_seed, fuzz_type, fuzz_game, inf_prob, coverage, coverage_thold, mut_budget):
 
-        self.rng = np.random.default_rng(r_seed)
+        self.rng = np.random.default_rng(rand_seed)
         self.fuzz_type = fuzz_type
         self.game = fuzz_game
         self.cov_type = coverage
@@ -32,12 +32,12 @@ class Fuzzer:
     def fuzz(self):
         population_summary = []
         self.game.env.reset()
-        nn_state, hi_lvl_state = self.game.get_state()
-        seed = Seed(nn_state, hi_lvl_state, 0, 0)
+        nn_state, hi_lvl_state, rand_state = self.game.get_state()
+        seed = Seed(nn_state, hi_lvl_state, rand_state, 0, 0)
+        seed.identifier = len(self.pool)
         self.pool.append(seed)
 
-        cov_0_time = 0
-        cov_g_time = 0
+        time_wout_cov = 0
         start_time = time.perf_counter()
         trial = 0
         while (time.perf_counter() - start_time) < FUZZ_BUDGET:
@@ -48,40 +48,41 @@ class Fuzzer:
                 seed = self.schedule.choose(self.pool, self.rng)
             else:
                 self.game.env.reset()  # rng=self.rng)
-                cand_nn, cand_hi_lvl = self.game.get_state()
-                seed = Seed(cand_nn, cand_hi_lvl, trial, time.perf_counter()-start_time)
+                cand_nn, cand_hi_lvl, rand_state = self.game.get_state()
+                seed = Seed(cand_nn, cand_hi_lvl, rand_state, trial, time.perf_counter()-start_time)
 
             rnd = self.rng.random()
             if rnd < self.inf_prob:
-                cand_nn, cand_hi_lvl = self.seed_policy_mutator.mutate(seed, self.rng)
+                cand_nn, cand_hi_lvl, rand_state = self.seed_policy_mutator.mutate(seed, self.rng)
             else:
-                cand_nn, cand_hi_lvl = self.random_action_mutator.mutate(seed, self.rng)
+                cand_nn, cand_hi_lvl, rand_state = self.random_action_mutator.mutate(seed, self.rng)
         
             if cand_nn is None: continue
 
-            cov_0_time += time.time() - s
+            time_wout_cov += time.time() - s
         
             is_int = self.is_interesting(cand_nn)
-
-            cov_g_time += time.time() - s
 
             trial += 1
             if cand_nn is not None and is_int:
                 cur_time = time.perf_counter()-start_time
-                self.pool.append(Seed(cand_nn, cand_hi_lvl, trial, cur_time))
-                logger.info("New seed found at %s. Pool size: %d." % (str(cur_time), len(self.pool)))
+                new_seed = Seed(cand_nn, cand_hi_lvl, rand_state, trial, cur_time)
+                new_seed.identifier = len(self.pool)
+                self.pool.append(new_seed)
+                logger.info("New seed found at trial %d and time %s. Pool size: %d." % (trial, str(cur_time), len(self.pool)))
                 population_summary.append([trial, cur_time, len(self.pool)])
 
-        print(self.inf_prob)
-        print("Avg fuzzer time cov0 time: %f", cov_0_time / trial) 
-        print("Avg fuzzer time cov> time: %f", cov_g_time / trial) 
-        print("Avg fuzzer time cov> time (over pool size): %f", cov_g_time / len(self.pool)) 
+        logger.info("Avg time spent in each fuzzer loop iteration excluding coverage: %f", time_wout_cov / trial) 
+        logger.info("Avg time spent in each fuzzer loop iteration including coverage: %f", FUZZ_BUDGET / trial) 
 
         logger.info("Pool Budget: %d, Size of the Pool: %d" % (FUZZ_BUDGET, len(self.pool)))
+        # note that this gets bigger and bigger for larger FUZZ_BUDGET
+        logger.info("Avg time needed add one more seed to the pool: %f", FUZZ_BUDGET / len(self.pool)) 
 
         self.total_trials = trial
+        self.summary = population_summary
+        self.time_wout_cov = time_wout_cov
 
-        return population_summary
 
     def is_interesting(self, cand):
 
