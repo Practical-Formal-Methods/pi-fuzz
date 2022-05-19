@@ -106,11 +106,9 @@ game = EW.Wrapper(env_iden)
 fuzz_summ_file = 'E%s_R%s_F%s_C%s_I%s_\d+_\d+_poolonly.p' % (env_iden, rand_seed, fuzz_type, str(coverage_thold), str(inf_prob))
 
 pool_exists = False
-for fname in os.listdir(logfolder):
-    print(fname)
+for pool_file in os.listdir(logfolder):
     if re.search(fuzz_summ_file, fname):
         pool_exists = True  
-        fuzz_summ_file = fname      
         break
 
 if not pool_exists:    
@@ -122,12 +120,12 @@ if not pool_exists:
     fuzz_out = launch_fuzzer(fuzzer)
     pool = fuzzer.pool
 
-    fuzz_summ_file = "./%s/E%s_R%s_F%s_C%s_I%s_%s_poolonly.p" % (logfolder, env_iden, rand_seed, fuzz_type, str(coverage_thold), str(inf_prob), fuzz_start_time)
+    pool_file = "./%s/E%s_R%s_F%s_C%s_I%s_%s_poolonly.p" % (logfolder, env_iden, rand_seed, fuzz_type, str(coverage_thold), str(inf_prob), fuzz_start_time)
 
-    fuzzer_summary = open(fuzz_summ_file, "wb")
+    fuzzer_summary = open(pool_file, "wb")
     pickle.dump(fuzz_out, fuzzer_summary)
 else:
-    fuzzer_summary = open(logfolder + "/" + fuzz_summ_file, "rb")
+    fuzzer_summary = open(logfolder + "/" + pool_file, "rb")
     fuzz_out = pickle.load(fuzzer_summary)
     pool = fuzz_out[1]
 
