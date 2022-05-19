@@ -2,7 +2,7 @@ import copy
 import logging
 import numpy as np
 import Mutator
-from fuzz_config import ORACLE_SEARCH_BUDGET, BUG_CONFIRMATION_BUDGET
+from config import ORACLE_SEARCH_BUDGET, BUG_CONFIRMATION_BUDGET
 from abc import ABC, abstractmethod
 
 logger = logging.getLogger("fuzz_logger")

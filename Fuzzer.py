@@ -6,7 +6,7 @@ import numpy as np
 import Mutator
 import Scheduler
 from Seed import Seed
-from fuzz_config import FUZZ_BUDGET
+from config import FUZZ_BUDGET
 
 logger = logging.getLogger('fuzz_logger')
 
