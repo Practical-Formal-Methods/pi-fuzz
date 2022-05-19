@@ -24,7 +24,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
         super(SaveOnBestTrainingRewardCallback, self).__init__(verbose)
         self.check_freq = check_freq
         self.log_dir = log_dir
-        self.save_path = os.path.join(log_dir, 'best_model')
+        self.save_path = os.path.join(log_dir, 'best_model' + str(rseed))
         self.best_mean_reward = -np.inf
 
     def _init_callback(self) -> None:
@@ -56,24 +56,28 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
         return True
 
+log_dir = "policies/"
+rseed = 55
+
 # Create environment
 #env = gym.make('BipedalWalker-v3')
 env = gym.make('LunarLander-v2')
-env.seed(123)
+env = Monitor(env, log_dir + "/monitor%d.csv" % rseed)
+env.seed(rseed)
 
 # Instantiate the agent
-model = PPO('MlpPolicy', env, verbose=1)    
+model = PPO('MlpPolicy', env, verbose=1)
 
 time_steps = int(1e6)
 # Train the agent
-callback = SaveOnBestTrainingRewardCallback(check_freq=40000, log_dir=log_dir)
+callback = SaveOnBestTrainingRewardCallback(check_freq=50000, log_dir=log_dir)
 model.learn(total_timesteps=time_steps, callback=callback)
 
 results_plotter.plot_results([log_dir], time_steps, results_plotter.X_TIMESTEPS, "PPO Lunar")
 plt.savefig("LunarPPOTraining%d.pdf" % time_steps)
 
 # Load the trained agent
-model = PPO.load("lunar_org", env=env)
+model = PPO.load(log_dir + "/best_model", env=env)
 
 # Evaluate the agent
 mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=100)
@@ -82,7 +86,7 @@ print(mean_reward, std_reward)
 # Enjoy trained agent
 env.seed(0)
 obs = env.reset()
-for i in range(1000):
+for i in range(100):
     action, _states = model.predict(obs, deterministic=True)
     obs, rewards, dones, info = env.step(action)
     env.render()
