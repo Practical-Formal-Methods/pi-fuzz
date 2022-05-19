@@ -8,6 +8,8 @@ import Fuzzer
 from Oracle import MMSeedBugBasicOracle, MMSeedBugExtOracle, MMSeedBug2BugOracle, MMBugOracle, FailureSeedBugOracle, PerfectSeedBugOracle, PerfectBugOracle, RuleSeedBugOracle
 from fuzz_utils import setup_logger
 
+from tqdm import tqdm
+
 ########## box2s-py HAS TO BE INSTALLED!!!!!!!!!!! ##############
 
 
@@ -33,7 +35,7 @@ def test_policy(oracle, pool):
     logger.info("=" * 30)
 
     num_tot_bugs = 0
-    for idx, fuzz_seed in enumerate(pool):
+    for idx, fuzz_seed in enumerate(tqdm(pool)):
         num_bugs = oracle.explore(fuzz_seed)
         num_tot_bugs += num_bugs
 

@@ -28,10 +28,7 @@ class Oracle(ABC):
     def explore(self, fuzz_seed):
         pass
 
-    def setRandAndFuzzSeed(self, env_state, rand_state=None, rand_seed=None):
-        # if not rand_seed:
-        #     rand_seed =  self.rand_seed
-
+    def setRandAndState(self, env_state, rand_state=None, rand_seed=None):
         # random state is either restored to original or resetted with rand_seed
         if rand_seed is not None:
             if self.game.env_iden == "highway":
@@ -57,7 +54,7 @@ class MMBugOracle(Oracle):
         org_f_cnt = 0
         # below loop corresponds to line 2 in Algorithm 1 
         for rand_seed in range(BUG_CONFIRMATION_BUDGET):  
-            self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, rand_seed=rand_seed)
+            self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rand_seed)
             org_rew, _, _ = self.game.play(fuzz_seed.data)
             if org_rew == 0: org_f_cnt += 1
 
@@ -71,7 +68,7 @@ class MMBugOracle(Oracle):
             mut_f_cnt = 0
             # below loop corresponds to line 5 in Algorithm 1 
             for rand_seed in range(BUG_CONFIRMATION_BUDGET):                
-                self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, rand_seed=rand_seed)
+                self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rand_seed)
                 nn_state, _ = self.game.get_state()
                 mut_rew, _, _ = self.game.play(nn_state)
                 
@@ -92,7 +89,7 @@ class MMSeedBugBasicOracle(Oracle):
     
     def explore(self, fuzz_seed):
 
-        self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, rand_state=fuzz_seed.rand_state)
+        self.setRandAndState(fuzz_seed.hi_lvl_state, rand_state=fuzz_seed.rand_state)
         org_reward, _, _ = self.game.play(fuzz_seed.data)
 
         if org_reward == 0: fuzz_seed.is_crash = True
@@ -107,7 +104,7 @@ class MMSeedBugBasicOracle(Oracle):
                 num_rejects += 1
                 continue
 
-            self.setRandAndFuzzSeed(mut_state, rand_state=fuzz_seed.rand_state)
+            self.setRandAndState(mut_state, rand_state=fuzz_seed.rand_state)
 
             nn_state, _, _ = self.game.get_state()
 
@@ -125,7 +122,7 @@ class MMSeedBugExtOracle(Oracle):
         super().__init__(game, rand_seed)
 
     def explore(self, fuzz_seed):
-        self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, rand_state=fuzz_seed.rand_state)
+        self.setRandAndState(fuzz_seed.hi_lvl_state, rand_state=fuzz_seed.rand_state)
 
         org_reward, _, _ = self.game.play(fuzz_seed.data)
 
@@ -142,7 +139,7 @@ class MMSeedBugExtOracle(Oracle):
                 num_rejects += 1
                 continue
 
-            self.setRandAndFuzzSeed(mut_state, rand_state=fuzz_seed.rand_state)
+            self.setRandAndState(mut_state, rand_state=fuzz_seed.rand_state)
 
             nn_state, _, _ = self.game.get_state()
 
@@ -179,7 +176,7 @@ class FailureSeedBugOracle(Oracle):
         
     def explore(self, fuzz_seed):
         
-        self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
+        self.setRandAndState(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
 
         org_reward, _, _ = self.game.play(fuzz_seed.data)
         
@@ -196,7 +193,7 @@ class RuleSeedBugOracle(Oracle):
         
     def explore(self, fuzz_seed):
         
-        self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
+        self.setRandAndState(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
 
         org_reward, org_play, _ = self.game.play(fuzz_seed.data)
 
@@ -211,7 +208,7 @@ class RuleSeedBugOracle(Oracle):
                 num_rejects += 1
                 continue
 
-            self.setRandAndFuzzSeed(mut_state, rand_state=fuzz_seed.rand_state)
+            self.setRandAndState(mut_state, rand_state=fuzz_seed.rand_state)
 
             nn_state, _, _ = self.game.get_state()
 
@@ -260,12 +257,12 @@ class PerfectSeedBugOracle(PerfectOracle):
             print("This oracle is only suitable for Highway!")
             exit()
 
-        self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
+        self.setRandAndState(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
 
         org_reward, _, _ = self.game.play(fuzz_seed.data)
         # if the agent is already winning then no need for exploration
         if org_reward <= 0:
-            self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
+            self.setRandAndState(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
             if self.magic_oracle(self.game.env):
                 return 1
         
@@ -283,12 +280,12 @@ class PerfectBugOracle(PerfectOracle):
 
         num_perfect_fails = 0
         for rs in range(BUG_CONFIRMATION_BUDGET):
-            self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, random_seed=rs)
+            self.setRandAndState(fuzz_seed.hi_lvl_state, random_seed=rs)
             if not self.magic_oracle(self.game.env): num_perfect_fails += 1
 
         num_policy_fails = 0
         for rs in range(BUG_CONFIRMATION_BUDGET):
-            self.setRandAndFuzzSeed(fuzz_seed.hi_lvl_state, random_seed=rs)
+            self.setRandAndState(fuzz_seed.hi_lvl_state, random_seed=rs)
             rew, _, _ = self.game.play(fuzz_seed.data, self.mode)
             if rew == 0: num_policy_fails += 1
         
