@@ -1,3 +1,4 @@
+import re
 import os
 import time
 import pickle
@@ -25,14 +26,14 @@ def launch_fuzzer(fuzzer):
     
     return [fuzzer.summary, fuzzer.pool, fuzzer.total_trials, fuzzer.schedule.cycles, fuzzer.time_wout_cov]
 
-def test_policy(oracle):
+def test_policy(oracle, pool):
     logger.info("\n")
     logger.info("=" * 30)
     logger.info("Oracle starts testing.")
     logger.info("=" * 30)
 
     num_tot_bugs = 0
-    for idx, fuzz_seed in enumerate(fuzzer.pool):
+    for idx, fuzz_seed in enumerate(pool):
         num_bugs = oracle.explore(fuzz_seed)
         num_tot_bugs += num_bugs
 
@@ -98,22 +99,46 @@ logger.info("Coverage thold: %s", coverage_thold)
 logger.info("Fuzzer mutation budget: %s", fuzz_mut_bdgt)
 logger.info("Informed mutations prob.: %s", inf_prob)
 
+game = EW.Wrapper(env_iden)
 
 # ===============================
 
-game = EW.Wrapper(env_iden)
+fuzz_summ_file = 'E%s_R%s_F%s_C%s_I%s_\d+_\d+_poolonly.p' % (env_iden, rand_seed, fuzz_type, str(coverage_thold), str(inf_prob))
+
+pool_exists = False
+for fname in os.listdir(logfolder):
+    print(fname)
+    if re.search(fuzz_summ_file, fname):
+        pool_exists = True  
+        fuzz_summ_file = fname      
+        break
+
+if not pool_exists:    
+    game.create_environment(env_seed=rand_seed)
+    game.create_model(agent_path, rand_seed)
+
+    fuzzer = Fuzzer.Fuzzer(rand_seed=rand_seed, fuzz_type=fuzz_type, fuzz_game=game, inf_prob=inf_prob, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
+
+    fuzz_out = launch_fuzzer(fuzzer)
+    pool = fuzzer.pool
+
+    fuzz_summ_file = "./%s/E%s_R%s_F%s_C%s_I%s_%s_poolonly.p" % (logfolder, env_iden, rand_seed, fuzz_type, str(coverage_thold), str(inf_prob), fuzz_start_time)
+
+    fuzzer_summary = open(fuzz_summ_file, "wb")
+    pickle.dump(fuzz_out, fuzzer_summary)
+else:
+    fuzzer_summary = open(logfolder + "/" + fuzz_summ_file, "rb")
+    fuzz_out = pickle.load(fuzzer_summary)
+    pool = fuzz_out[1]
+
+    logger.info("A pool is already formed with current configurations. Loading that and moving on to the oracle.")
+
+print("Pool size:", len(pool))
+    
+# ===============================
+
 game.create_environment(env_seed=rand_seed)
 game.create_model(agent_path, rand_seed)
-
-fuzzer = Fuzzer.Fuzzer(rand_seed=rand_seed, fuzz_type=fuzz_type, fuzz_game=game, inf_prob=inf_prob, coverage=coverage, coverage_thold=coverage_thold, mut_budget=fuzz_mut_bdgt)
-
-fuzz_out = launch_fuzzer(fuzzer)
-
-print("Pool size:", len(fuzzer.pool))
-fuzzer_summary = open("./%s/E%s_R%s_F%s_C%s_I%s_%s_poolonly.p" % (logfolder, env_iden, rand_seed, fuzz_type, str(coverage_thold), str(inf_prob), fuzz_start_time), "wb")
-pickle.dump(fuzz_out, fuzzer_summary)
-
-# ===============================
 
 oracle_registry = dict()
 oracle_registry['mmseedbugbasic'] = MMSeedBugBasicOracle(game, rand_seed)
@@ -127,15 +152,12 @@ oracle_registry['perfbug'] = PerfectBugOracle(game, rand_seed)
 
 oracle = oracle_registry[oracle_type]
 
-game.create_environment(env_seed=rand_seed)
-game.create_model(agent_path, rand_seed)
-
 test_start = time.time()
-num_bugs = test_policy(oracle)
+num_bugs = test_policy(oracle, pool)
 test_end = time.time()
 
 oracle_time = test_end - test_start
-avg_oracle_time = oracle_time / len(fuzzer.pool)
+avg_oracle_time = oracle_time / len(pool)
 
 test_out = fuzz_out + [num_bugs, oracle_time, avg_oracle_time]
 
