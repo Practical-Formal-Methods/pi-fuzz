@@ -107,7 +107,7 @@ fuzz_summ_file = 'E%s_R%s_F%s_C%s_I%s_\d+_\d+_poolonly.p' % (env_iden, rand_seed
 
 pool_exists = False
 for pool_file in os.listdir(logfolder):
-    if re.search(fuzz_summ_file, fname):
+    if re.search(fuzz_summ_file, pool_file):
         pool_exists = True  
         break
 
@@ -132,7 +132,7 @@ else:
     logger.info("A pool is already formed with current configurations. Loading that and moving on to the oracle.")
 
 print("Pool size:", len(pool))
-    
+
 # ===============================
 
 game.create_environment(env_seed=rand_seed)
