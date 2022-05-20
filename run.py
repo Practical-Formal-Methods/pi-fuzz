@@ -41,7 +41,7 @@ def test_policy(oracle, pool):
 
         fuzz_seed.num_bugs = num_bugs
 
-        logger.info("The oracle has found %d bugs in seed %d" % (num_bugs, idx))
+        logger.info("The oracle has found %d bug(s) in seed %d" % (num_bugs, idx))
 
     logger.info("=" * 30)
     logger.info("Oracle finishes testing.")
@@ -85,7 +85,7 @@ if not logfolder:
 if not os.path.exists(logfolder):
     os.makedirs(logfolder)
 
-logf = "./%s/E%s_R%s_F%s_C%s_I%s_%s.log" % (logfolder, env_iden, rand_seed, fuzz_type, str(coverage_thold), str(inf_prob), fuzz_start_time)
+logf = "./%s/E%s_R%s_O%s_F%s_C%s_I%s_%s.log" % (logfolder, env_iden, rand_seed, oracle_type, fuzz_type, str(coverage_thold), str(inf_prob), fuzz_start_time)
 
 logger = setup_logger(loggername, logf)
 logger.info("#############################")

@@ -75,8 +75,7 @@ class MMBugOracle(Oracle):
                 if mut_rew == 0: mut_f_cnt += 1
             
             # below condition effectively corresponds to line 6 in Algorithm 1
-            if mut_f_cnt < org_f_cnt:
-                logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier))
+            if mut_f_cnt > org_f_cnt:
                 return 1  # bug found
         
         logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier))
@@ -111,7 +110,6 @@ class MMSeedBugBasicOracle(Oracle):
             mut_reward, _, _ = self.game.play(nn_state)
 
             if mut_reward > org_reward:
-                logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier))
                 return 1
 
         logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier))
@@ -128,7 +126,7 @@ class MMSeedBugExtOracle(Oracle):
 
         if org_reward == 0: 
             fuzz_seed.is_crash = True
-            logger.info("Skipping fuzz seed %d as agent wins on there (harder state)." % fuzz_seed.identifier)
+            logger.info("Skipping fuzz seed %d as agent loses on there (harder state)." % fuzz_seed.identifier)
             return 0
 
         num_bugs = 0
@@ -145,7 +143,7 @@ class MMSeedBugExtOracle(Oracle):
 
             mut_reward, _, _ = self.game.play(nn_state)
 
-            if mut_reward > org_reward:
+            if mut_reward < org_reward:
                 num_bugs += 1
         
         logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier))
@@ -219,11 +217,9 @@ class RuleSeedBugOracle(Oracle):
                 # rule: if there is policy that can succeed in harder state, it should take the same action on the easier state
                 if self.game.env_iden == "bipedal":
                     if list(mut_play[0]) != list(org_play[0]): 
-                        logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier))
                         return 1
                 else:
-                    if mut_play[0] != org_play[0]: 
-                        logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier)) 
+                    if mut_play[0] != org_play[0]:
                         return 1
         
         logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier))

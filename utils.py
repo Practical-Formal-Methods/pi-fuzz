@@ -6,7 +6,7 @@ from os.path import isfile, join
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from fuzz_config import FUZZ_BUDGET
+from config import FUZZ_BUDGET
 
 def poolsize_over_time(env_idn, pool_pop_summ):
 
