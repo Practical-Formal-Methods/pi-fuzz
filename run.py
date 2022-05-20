@@ -6,7 +6,7 @@ import argparse
 import EnvWrapper as EW
 import Fuzzer
 from Oracle import MMSeedBugBasicOracle, MMSeedBugExtOracle, MMSeedBug2BugOracle, MMBugOracle, FailureSeedBugOracle, PerfectSeedBugOracle, PerfectBugOracle, RuleSeedBugOracle
-from fuzz_utils import setup_logger
+from utils import setup_logger
 
 from tqdm import tqdm
 
@@ -49,7 +49,7 @@ def test_policy(oracle, pool):
 
     logger.info("Total number of bugs detected by this oracle: %d" % num_tot_bugs)
 
-    return num_bugs
+    return num_tot_bugs
 
 
 fuzz_start_time = time.strftime("%Y%m%d_%H%M%S")
