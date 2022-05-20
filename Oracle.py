@@ -68,7 +68,7 @@ class MMBugOracle(Oracle):
             # below loop corresponds to line 5 in Algorithm 1 
             for rand_seed in range(BUG_CONFIRMATION_BUDGET):                
                 self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rand_seed)
-                nn_state, _ = self.game.get_state()
+                nn_state, _, _ = self.game.get_state()
                 mut_rew, _, _ = self.game.play(nn_state)
                 
                 if mut_rew == 0: mut_f_cnt += 1
