@@ -33,11 +33,10 @@ class Oracle(ABC):
         if rand_seed is not None:
             if self.game.env_iden == "highway":
                 idl_rng = np.random.default_rng(rand_seed)
-                self.game.env.reset(idl_rng)
+                self.game.set_state(env_state, idl_rng)
             else:
                 self.game.env.seed(rand_seed)
-
-            self.game.set_state(env_state)  # highway: [street, v])
+                self.game.set_state(env_state)  # highway: [street, v])
         else:
             self.game.set_state(env_state, rand_state)
 
