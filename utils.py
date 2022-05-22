@@ -1,5 +1,6 @@
 import re
 import os
+import pickle
 import logging
 from os import listdir
 from os.path import isfile, join
@@ -51,10 +52,11 @@ def orcl_evl_bipedal():
             rsb_files.append("pifuzz_logs/" + fname)
 
     for mmsbb, mmsbe, fsb, rsb in zip(mmsbb_files, mmsbe_files, fsb_files, rsb_files):
-        mmseedbugbasic_pools.append(mmsbb[1])
-        mmseedbugext_pools.append(mmsbe[1])
-        failseedbug_pools.append(fsb[1])
-        ruleseedbug_pools.append(rsb[1])
+
+        mmseedbugbasic_pools.append(pickle.load(open(mmsbb, "rb"))[1])
+        mmseedbugext_pools.append(pickle.load(open(mmsbe, "rb"))[1])
+        failseedbug_pools.append(pickle.load(open(fsb, "rb"))[1])
+        ruleseedbug_pools.append(pickle.load(open(rsb, "rb"))[1])
     
     mmsbb_means, mmsbb_stds = process_pools(mmseedbugbasic_pools)
     mmsbe_means, mmsbe_stds = process_pools(mmseedbugext_pools)
