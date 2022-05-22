@@ -1,4 +1,5 @@
 import re
+import os
 import logging
 from os import listdir
 from os.path import isfile, join
@@ -33,12 +34,23 @@ def process_pools(pools):
 def orcl_evl_bipedal():
     mmseedbugbasic_pools, mmseedbugext_pools, failseedbug_pools, ruleseedbug_pools = [], [], [], []
 
-    mmseedbugbasic_files = 'Ebipedal_R\d+_Ommseedbugbasic_Finc_C2.0_I0.1_\d+_\d+.p'
-    mmseedbugext_files = 'Ebipedal_R\d+_Ommseedbugext_Finc_C2.0_I0.1_\d+_\d+.p'
-    failseedbug_files = 'Ebipedal_R\d+_Ofailseedbug_Finc_C2.0_I0.1_\d+_\d+.p'
-    ruleseedbug_files = 'Ebipedal_R\d+_Oruleseedbug_Finc_C2.0_I0.1_\d+_\d+.p'
+    mmsbb_file_templ = 'Ebipedal_R\d+_Ommseedbugbasic_Finc_C2.0_I0.1_\d+_\d+.p'
+    mmsbe_file_templ = 'Ebipedal_R\d+_Ommseedbugext_Finc_C2.0_I0.1_\d+_\d+.p'
+    fsb_file_templ = 'Ebipedal_R\d+_Ofailseedbug_Finc_C2.0_I0.1_\d+_\d+.p'
+    rsb_file_templ = 'Ebipedal_R\d+_Oruleseedbug_Finc_C2.0_I0.1_\d+_\d+.p'
+    
+    mmsbb_files, mmsbe_files, fsb_files, rsb_files = [], [], [], []
+    for fname in os.listdir("pifuzz_logs"):
+        if re.search(mmsbb_file_templ, fname):
+            mmsbb_files.append("pifuzz_logs/" + fname)
+        if re.search(mmsbe_file_templ, fname):
+            mmsbe_files.append("pifuzz_logs/" + fname)
+        if re.search(fsb_file_templ, fname):
+            fsb_files.append("pifuzz_logs/" + fname)
+        if re.search(rsb_file_templ, fname):
+            rsb_files.append("pifuzz_logs/" + fname)
 
-    for mmsbb, mmsbe, fsb, rsb in zip(mmseedbugbasic_files, mmseedbugext_files, failseedbug_files, ruleseedbug_files):
+    for mmsbb, mmsbe, fsb, rsb in zip(mmsbb_files, mmsbe_files, fsb_files, rsb_files):
         mmseedbugbasic_pools.append(mmsbb[1])
         mmseedbugext_pools.append(mmsbe[1])
         failseedbug_pools.append(fsb[1])
