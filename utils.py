@@ -8,6 +8,72 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from config import FUZZ_BUDGET
 
+def process_pools(pools):
+    largest_pool_size = 0
+    for pool in pools:
+        if len(pool) > largest_pool_size: largest_pool_size = len(pool)
+
+    all_bugs = []
+    for cur_pool in pools:
+        cum_bugs_lst, cum_bugs = [], 0
+        for i in range(largest_pool_size):
+            # fill the rest of the cum_bugs_lst with latest cum_bugs value
+            if i < len(cur_pool): 
+                fuzz_seed = cur_pool[i]
+                cum_bugs += fuzz_seed.num_bugs
+            cum_bugs_lst.append(cum_bugs)
+
+    all_bugs.append(cum_bugs_lst)
+    mean_bugs = np.array(all_bugs).mean(axis=0)  # mean bugs over pool size
+    std_bugs = np.array(all_bugs).std(axis=0)  # std bugs over pool size
+
+    return mean_bugs, std_bugs
+
+
+def orcl_evl_bipedal():
+    mmseedbugbasic_pools, mmseedbugext_pools, failseedbug_pools, ruleseedbug_pools = [], [], [], []
+
+    mmseedbugbasic_files = 'Ebipedal_R\d+_Ommseedbugbasic_Finc_C2.0_I0.1_\d+_\d+.p'
+    mmseedbugext_files = 'Ebipedal_R\d+_Ommseedbugext_Finc_C2.0_I0.1_\d+_\d+.p'
+    failseedbug_files = 'Ebipedal_R\d+_Ofailseedbug_Finc_C2.0_I0.1_\d+_\d+.p'
+    ruleseedbug_files = 'Ebipedal_R\d+_Oruleseedbug_Finc_C2.0_I0.1_\d+_\d+.p'
+
+    for mmsbb, mmsbe, fsb, rsb in zip(mmseedbugbasic_files, mmseedbugext_files, failseedbug_files, ruleseedbug_files):
+        mmseedbugbasic_pools.append(mmsbb[1])
+        mmseedbugext_pools.append(mmsbe[1])
+        failseedbug_pools.append(fsb[1])
+        ruleseedbug_pools.append(rsb[1])
+    
+    mmsbb_means, mmsbb_stds = process_pools(mmseedbugbasic_pools)
+    mmsbe_means, mmsbe_stds = process_pools(mmseedbugext_pools)
+    fsb_means, fsb_stds = process_pools(failseedbug_pools)
+    rsb_means, rsb_stds = process_pools(ruleseedbug_pools)
+
+    labels = ["MMSeedBugExt", "FailureSeedBug", "MMSeedBugBasic", "RuleSeedBug"]
+    colors = ["#344588", "#f29544", "#e32d2d", "#955a92" ]
+
+    plt.figure(figsize=(10, 7.5))
+    ax = plt.subplot(111)
+    
+    ax.set_yscale('log')
+    ax.get_xaxis().tick_bottom()
+    ax.get_yaxis().tick_left()
+
+    pool_size = len(mmsbb_means[0])
+    plt.xticks(range(0, pool_size+10, 200), fontsize=16)
+    plt.yticks(fontsize=12, rotation=30)
+    plt.xlabel("Pool Size", fontsize=19)
+    plt.ylabel("# Bugs", fontsize=19)
+
+    for mean, std, lbl, clr in zip ([mmsbe_means, fsb_means, mmsbb_means, rsb_means], [mmsbe_stds, fsb_stds, mmsbb_stds, rsb_stds], labels, colors):
+        plt.plot(range(pool_size), mean, lw=2, label=lbl, color=clr)
+        plt.fill_between(range(pool_size), mean+std, mean-std, color=clr, alpha=0.3)
+    
+    plt.legend(loc="lower right", fontsize=16 )
+
+    plt.savefig("bipedal_bugs_pool_size.pdf", bbox_inches="tight")
+
+
 def poolsize_over_time(env_idn, pool_pop_summ):
 
     all_size_mean = []
@@ -127,8 +193,8 @@ def warn_over_time(env_idn, pools, mode="num_bugs"):  # pools_g, pools_b, pools_
         plt.ylabel("# Bugs", fontsize=19)
 
 
-    # labels = ["INC=0.8 INF=0.2", "INC=0.8 INF=0.1", "INC=0.8 INF=0", "INC=0 INF=0.2", "INC=0 INF=0.1", "INC=0 INF=0"]
-    # colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
+    labels = ["INC=0.8 INF=0.2", "INC=0.8 INF=0.1", "INC=0.8 INF=0", "INC=0 INF=0.2", "INC=0 INF=0.1", "INC=0 INF=0"]
+    colors = ["#3a82b5", "#3f7d48", "#f29544", "#3a82b5", "#3f7d48", "#f29544"]
     linestyles = ["-", "-", "-", "--", "--", "--"]
     for clr, lbl, awm, aws in zip(colors, labels, all_warns_over_time_mean, all_warns_over_time_std):
         plt.plot(range(FUZZ_BUDGET)[0:FUZZ_BUDGET:60], awm[0:FUZZ_BUDGET:60], lw=2, label=lbl, color=clr)
