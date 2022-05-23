@@ -12,7 +12,6 @@ class Oracle(ABC):
 
     def __init__(self, game, rand_seed, de_dup=None):
         self.game = game
-        self.mode = 'qualitative'
         self.rng = np.random.default_rng(rand_seed)
         self.de_dup = de_dup
 
@@ -50,12 +49,16 @@ class MMBugOracle(Oracle):
             print("This oracle is not suitable for BipedalWalker environment as it takes too much time. Thus, we did not include this experiment in the paper. If you are curious to try this, remove this condition and consider decreasing confirmation budget.")
             exit()
 
-        org_f_cnt = 0
+        org_w_cnt = 0
         # below loop corresponds to line 2 in Algorithm 1 
         for rand_seed in range(BUG_CONFIRMATION_BUDGET):  
             self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rand_seed)
             org_rew, _, _ = self.game.play(fuzz_seed.data)
-            if org_rew == 0: org_f_cnt += 1
+            if org_rew == 0: org_w_cnt += 1
+
+        if org_w_cnt == BUG_CONFIRMATION_BUDGET:
+            logger.info("Skipping seed %d as agent wins with every random seed on the current state (easier)." % fuzz_seed.identifier)
+            return 0
 
         num_rejects = 0
         for _ in range(ORACLE_SEARCH_BUDGET):
@@ -64,17 +67,17 @@ class MMBugOracle(Oracle):
                 num_rejects += 1
                 continue
 
-            mut_f_cnt = 0
+            mut_w_cnt = 0
             # below loop corresponds to line 5 in Algorithm 1 
             for rand_seed in range(BUG_CONFIRMATION_BUDGET):                
                 self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rand_seed)
                 nn_state, _, _ = self.game.get_state()
                 mut_rew, _, _ = self.game.play(nn_state)
                 
-                if mut_rew == 0: mut_f_cnt += 1
+                if mut_rew == 100: mut_w_cnt += 1
             
             # below condition effectively corresponds to line 6 in Algorithm 1
-            if mut_f_cnt > org_f_cnt:
+            if mut_w_cnt > org_w_cnt:
                 return 1  # bug found
         
         logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier))
@@ -154,14 +157,15 @@ class MMSeedBug2BugOracle(Oracle):
 
     def __init__(self, game, rand_seed):
         super().__init__(game, rand_seed)
+        self.rand_seed = rand_seed
         
     def explore(self, fuzz_seed):        
-        mmseedbugoracle = MMSeedBugBasicOracle(Oracle)
-        is_seed_bug, _ = mmseedbugoracle.explore(fuzz_seed)
+        mmseedbugoracle = MMSeedBugBasicOracle(self.game, self.rand_seed)
+        is_seed_bug = mmseedbugoracle.explore(fuzz_seed)
         
         if is_seed_bug == 1:
-            mmbugoracle = MMBugOracle(Oracle)
-            is_bug, _ = mmbugoracle.explore(fuzz_seed)
+            mmbugoracle = MMBugOracle(self.game, self.rand_seed)
+            is_bug = mmbugoracle.explore(fuzz_seed)
             if is_bug == 1: return 1
 
         return 0
@@ -226,7 +230,7 @@ class RuleSeedBugOracle(Oracle):
 
 
 class PerfectOracle(Oracle):
-    def magic_oracle(env):
+    def magic_oracle(self, env):
         envs = [env]
 
         while len(envs) != 0:
@@ -275,13 +279,13 @@ class PerfectBugOracle(PerfectOracle):
 
         num_perfect_fails = 0
         for rs in range(BUG_CONFIRMATION_BUDGET):
-            self.setRandAndState(fuzz_seed.hi_lvl_state, random_seed=rs)
+            self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rs)
             if not self.magic_oracle(self.game.env): num_perfect_fails += 1
 
         num_policy_fails = 0
         for rs in range(BUG_CONFIRMATION_BUDGET):
-            self.setRandAndState(fuzz_seed.hi_lvl_state, random_seed=rs)
-            rew, _, _ = self.game.play(fuzz_seed.data, self.mode)
+            self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rs)
+            rew, _, _ = self.game.play(fuzz_seed.data)
             if rew == 0: num_policy_fails += 1
         
         if num_policy_fails > num_perfect_fails:

@@ -64,7 +64,7 @@ parser.add_argument("-C", "--coverage", default="raw", choices=['raw', 'abs'])
 parser.add_argument("-CT", "--coverage_thold", default=2.0, type=float)
 parser.add_argument("-L", "--logfolder", default="")
 parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and bipedal
-parser.add_argument("-IP", "--inf_probability", default=0.1, type=float)
+parser.add_argument("-IP", "--inf_probability", default=0.2, type=float)
 
 args = parser.parse_args()
 

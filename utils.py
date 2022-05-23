@@ -25,10 +25,11 @@ def process_pools(pools):
                 cum_bugs += fuzz_seed.num_bugs
             cum_bugs_lst.append(cum_bugs)
 
-    all_bugs.append(cum_bugs_lst)
+        all_bugs.append(cum_bugs_lst)
+    
     mean_bugs = np.array(all_bugs).mean(axis=0)  # mean bugs over pool size
     std_bugs = np.array(all_bugs).std(axis=0)  # std bugs over pool size
-
+    
     return mean_bugs, std_bugs
 
 
@@ -73,7 +74,7 @@ def orcl_evl_bipedal():
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
-    pool_size = len(mmsbb_means[0])
+    pool_size = len(mmsbb_means)
     plt.xticks(range(0, pool_size+10, 200), fontsize=16)
     plt.yticks(fontsize=12, rotation=30)
     plt.xlabel("Pool Size", fontsize=19)
@@ -83,7 +84,7 @@ def orcl_evl_bipedal():
         plt.plot(range(pool_size), mean, lw=2, label=lbl, color=clr)
         plt.fill_between(range(pool_size), mean+std, mean-std, color=clr, alpha=0.3)
     
-    plt.legend(loc="lower right", fontsize=16 )
+    plt.legend(loc="lower right", fontsize=16, shadow=True)
 
     plt.savefig("bipedal_bugs_pool_size.pdf", bbox_inches="tight")
 
