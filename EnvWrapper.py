@@ -123,7 +123,7 @@ class Wrapper():
 
         return reward, next_state, done
 
-    def play(self, init_state, render=False):
+    def play(self, init_state):
         next_state = init_state
         full_play = []
         all_rews = []
@@ -131,9 +131,6 @@ class Wrapper():
             act = self.model_step(next_state)
 
             reward, next_state, done = self.env_step(act)
-            if render:
-                self.env.render()
-                time.sleep(0.01)
 
             # if self.env_iden == "highway":
             #     total_reward = self.env.acc_return  # += np.power(GAMMA, num_steps) * reward
@@ -153,10 +150,10 @@ class Wrapper():
                 return final_rew, full_play, all_rews # visited_states
 
     def eval(self, eval_budget=100):
+        tot_rew = 0
         for _ in range(eval_budget):
             self.env.reset()
             next_state, _, _ = self.get_state()
-            tot_rew = 0
             done = False
             while not done:
                 act = self.model_step(next_state)
@@ -164,6 +161,6 @@ class Wrapper():
                 tot_rew += reward
                 if done:
                     print(tot_rew)
-                # self.env.render()
-                # time.sleep(0.005)
-                # c += 1
+
+        print(tot_rew / 100)
+

@@ -26,7 +26,6 @@ def process_pools(pools):
             cum_bugs_lst.append(cum_bugs)
 
         all_bugs.append(cum_bugs_lst)
-    
     mean_bugs = np.array(all_bugs).mean(axis=0)  # mean bugs over pool size
     std_bugs = np.array(all_bugs).std(axis=0)  # std bugs over pool size
     
@@ -36,10 +35,10 @@ def process_pools(pools):
 def orcl_evl_bipedal():
     mmseedbugbasic_pools, mmseedbugext_pools, failseedbug_pools, ruleseedbug_pools = [], [], [], []
 
-    mmsbb_file_templ = 'Ebipedal_R\d+_Ommseedbugbasic_Finc_C2.0_I0.1_\d+_\d+.p'
-    mmsbe_file_templ = 'Ebipedal_R\d+_Ommseedbugext_Finc_C2.0_I0.1_\d+_\d+.p'
-    fsb_file_templ = 'Ebipedal_R\d+_Ofailseedbug_Finc_C2.0_I0.1_\d+_\d+.p'
-    rsb_file_templ = 'Ebipedal_R\d+_Oruleseedbug_Finc_C2.0_I0.1_\d+_\d+.p'
+    mmsbb_file_templ = 'Ebipedal_R\d+_Ommseedbugbasic_Finc_C2.0_I0.2_\d+_\d+.p'
+    mmsbe_file_templ = 'Ebipedal_R\d+_Ommseedbugext_Finc_C2.0_I0.2_\d+_\d+.p'
+    fsb_file_templ = 'Ebipedal_R\d+_Ofailseedbug_Finc_C2.0_I0.2_\d+_\d+.p'
+    rsb_file_templ = 'Ebipedal_R\d+_Oruleseedbug_Finc_C2.0_I0.2_\d+_\d+.p'
     
     mmsbb_files, mmsbe_files, fsb_files, rsb_files = [], [], [], []
     for fname in os.listdir("pifuzz_logs"):
@@ -63,6 +62,7 @@ def orcl_evl_bipedal():
     mmsbe_means, mmsbe_stds = process_pools(mmseedbugext_pools)
     fsb_means, fsb_stds = process_pools(failseedbug_pools)
     rsb_means, rsb_stds = process_pools(ruleseedbug_pools)
+    
 
     labels = ["MMSeedBugExt", "FailureSeedBug", "MMSeedBugBasic", "RuleSeedBug"]
     colors = ["#344588", "#f29544", "#e32d2d", "#955a92" ]
