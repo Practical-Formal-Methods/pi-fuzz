@@ -54,7 +54,7 @@ class MMBugOracle(Oracle):
         for rand_seed in range(BUG_CONFIRMATION_BUDGET):  
             self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rand_seed)
             org_rew, _, _ = self.game.play(fuzz_seed.data)
-            if org_rew == 0: org_w_cnt += 1
+            if org_rew == 100: org_w_cnt += 1
 
         if org_w_cnt == BUG_CONFIRMATION_BUDGET:
             logger.info("Skipping seed %d as agent wins with every random seed on the current state (easier)." % fuzz_seed.identifier)
