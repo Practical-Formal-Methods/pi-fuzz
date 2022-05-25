@@ -1,3 +1,4 @@
+from mimetypes import init
 import re
 import os
 import time
@@ -165,7 +166,7 @@ test_summary = open("./%s/E%s_R%s_O%s_F%s_C%s_I%s_%s.p" % (logfolder, env_iden, 
 pickle.dump(test_out, test_summary)
 
 # COMMANDS
-# -E highway -R 123 -A policies/linetrack_org.pth -F inc -CT 3.6 -FMB 3 -OMB 2
-# -E lunar -R 123 -A policies/lunar_org -F inc -CT 0.65 -FMB 25
-# -E bipedal -R 123 -A policies/bipedal_org -F inc -CT 2.0 -FMB 25
+# -E highway -R 123 -A policies/linetrack_org.pth -F inc -IP 0.2 -CT 3.6 -FMB 3
+# -E lunar -R 123 -A policies/lunar_org -F inc -CT 0.65 -IP 0.2 -FMB 25
+# -E bipedal -R 123 -A policies/bipedal_org -F inc -IP 0.2 -CT 2.0 -FMB 25
 
