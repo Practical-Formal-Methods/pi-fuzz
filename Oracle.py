@@ -66,23 +66,26 @@ class MMBugOracle(Oracle):
             if mut_state is None:
                 num_rejects += 1
                 continue
-
+            
             mut_w_cnt = 0
             # below loop corresponds to line 5 in Algorithm 1 
             for rand_seed in range(BUG_CONFIRMATION_BUDGET):                
-                self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rand_seed)
+                self.setRandAndState(mut_state, rand_seed=rand_seed)
                 nn_state, _, _ = self.game.get_state()
                 mut_rew, _, _ = self.game.play(nn_state)
                 
                 if mut_rew == 100: mut_w_cnt += 1
             
-            # below condition effectively corresponds to line 6 in Algorithm 1
-            if mut_w_cnt > org_w_cnt:
-                return 1  # bug found
-        
+                # below condition effectively corresponds to line 6 in Algorithm 1
+                if mut_w_cnt > org_w_cnt:
+                    return 1  # bug found
+           
+                # optimization
+                if (BUG_CONFIRMATION_BUDGET - rand_seed - 1) + mut_w_cnt <= org_w_cnt:
+                    break
+
         logger.info("%d out of %d (un)relaxation is rejected on fuzz seed %d." % (num_rejects, ORACLE_SEARCH_BUDGET, fuzz_seed.identifier))
         return 0  # bug not found
-
 
 class MMSeedBugBasicOracle(Oracle):
     def __init__(self, game, rand_seed):

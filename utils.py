@@ -4,7 +4,9 @@ import pickle
 import logging
 from os import listdir
 from os.path import isfile, join
-
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -24,7 +26,7 @@ def plot(benchmark, mean_data, std_data, labels, colors):
     plt.yticks(fontsize=12, rotation=30)
     plt.xlabel("Pool Size", fontsize=19)
     plt.ylabel("# Bugs", fontsize=19)
-
+    
     for mean, std, lbl, clr in zip (mean_data, std_data, labels, colors):
         plt.plot(range(pool_size), mean, lw=2, label=lbl, color=clr)
         plt.fill_between(range(pool_size), mean+std, mean-std, color=clr, alpha=0.3)
@@ -41,8 +43,8 @@ def plot(benchmark, mean_data, std_data, labels, colors):
     elif benchmark == "highway":
         order1 = [0, 1, 2]
         order2 = [3, 4, 5, 6, 7]
-    
-    first_legend = ax.legend( [handles[idx] for idx in order1], [labels[idx] for idx in order1], loc='lower left', bbox_to_anchor=(0.25, 0.), fontsize=16)
+   
+    first_legend = ax.legend( [handles[idx] for idx in order1], [labels[idx] for idx in order1], loc='lower left', bbox_to_anchor=(0.25, 0.), fontsize=16, shadow=True)
     ax.add_artist(first_legend)
     ax.legend( [handles[idx] for idx in order2], [labels[idx] for idx in order2], loc='lower right', fontsize=16, shadow=True)
         
@@ -54,6 +56,7 @@ def process_pools(pools):
     for pool in pools:
         if len(pool) > largest_pool_size: largest_pool_size = len(pool)
 
+    # largest_pool_size = 1262
     all_bugs = []
     for cur_pool in pools:
         cum_bugs_lst, cum_bugs = [], 0
@@ -63,7 +66,7 @@ def process_pools(pools):
                 fuzz_seed = cur_pool[i]
                 cum_bugs += fuzz_seed.num_bugs
             cum_bugs_lst.append(cum_bugs)
-
+        
         all_bugs.append(cum_bugs_lst)
     mean_bugs = np.array(all_bugs).mean(axis=0)  # mean bugs over pool size
     std_bugs = np.array(all_bugs).std(axis=0)  # std bugs over pool size
@@ -112,12 +115,12 @@ def orcl_evl_bipedal():
 def orcl_evl_lunar():
     mmseedbugbasic_pools, mmseedbug2bug_pools, mmseedbugext_pools, mmbug_pools,failseedbug_pools, ruleseedbug_pools = [], [], [], [], [], []
 
-    mmsbb_file_templ = 'Elunar_R\d+_Ommseedbugbasic_Finc_C2.0_I0.2_\d+_\d+.p'
-    mmsbe_file_templ = 'Elunar_R\d+_Ommseedbugext_Finc_C2.0_I0.2_\d+_\d+.p'
-    mmb_file_templ = 'Elunar_R\d+_Ommbug_Finc_C2.0_I0.2_\d+_\d+.p'
-    mmsb2b_file_templ = 'Elunar_R\d+_Ommseedbug2bug_Finc_C2.0_I0.2_\d+_\d+.p'
-    fsb_file_templ = 'Elunar_R\d+_Ofailseedbug_Finc_C2.0_I0.2_\d+_\d+.p'
-    rsb_file_templ = 'Elunar_R\d+_Oruleseedbug_Finc_C2.0_I0.2_\d+_\d+.p'
+    mmsbb_file_templ = 'Elunar_R\d+_Ommseedbugbasic_Finc_C0.65_I0.2_\d+_\d+.p'
+    mmsbe_file_templ = 'Elunar_R\d+_Ommseedbugext_Finc_C0.65_I0.2_\d+_\d+.p'
+    mmb_file_templ = 'Elunar_R\d+_Ommbug_Finc_C0.65_I0.2_\d+_\d+.p'
+    mmsb2b_file_templ = 'Elunar_R\d+_Ommseedbug2bug_Finc_C0.65_I0.2_\d+_\d+.p'
+    fsb_file_templ = 'Elunar_R\d+_Ofailseedbug_Finc_C0.65_I0.2_\d+_\d+.p'
+    rsb_file_templ = 'Elunar_R\d+_Oruleseedbug_Finc_C0.65_I0.2_\d+_\d+.p'
     
     mmsbb_files, mmsb2b_files, mmsbe_files, mmb_files, fsb_files, rsb_files = [], [], [], [], [], []
     for fname in os.listdir("pifuzz_logs"):
@@ -152,7 +155,7 @@ def orcl_evl_lunar():
     
     mean_data = [mmb_means, mmsb2b_means, mmsbe_means, fsb_means, mmsbb_means, rsb_means]
     std_data = [mmb_stds, mmsb2b_stds, mmsbe_stds, fsb_stds, mmsbb_stds, rsb_stds]
-    labels = ["MMBug", "MMSeedBug2Bug" "MMSeedBugExt", "FailureSeedBug", "MMSeedBugBasic", "RuleSeedBug"]
+    labels = ["MMBug", "MMSeedBug2Bug", "MMSeedBugExt", "FailureSeedBug", "MMSeedBugBasic", "RuleSeedBug"]
     colors = ["#b2b200", "#43ce3b", "#344588", "#f29544", "#e32d2d", "#955a92" ]
 
     plot("lunar", mean_data, std_data, labels, colors)
@@ -161,14 +164,14 @@ def orcl_evl_lunar():
 def orcl_evl_highway():
     mmseedbugbasic_pools, mmseedbug2bug_pools, mmseedbugext_pools, mmbug_pools,failseedbug_pools, ruleseedbug_pools, perfbug_pools, perfseedbug_pools = [], [], [], [], [], [], [], []
 
-    mmsbb_file_templ = 'Elunar_R\d+_Ommseedbugbasic_Finc_C2.0_I0.2_\d+_\d+.p'
-    mmsbe_file_templ = 'Elunar_R\d+_Ommseedbugext_Finc_C2.0_I0.2_\d+_\d+.p'
-    mmb_file_templ = 'Elunar_R\d+_Ommbug_Finc_C2.0_I0.2_\d+_\d+.p'
-    mmsb2b_file_templ = 'Elunar_R\d+_Ommseedbug2bug_Finc_C2.0_I0.2_\d+_\d+.p'
-    fsb_file_templ = 'Elunar_R\d+_Ofailseedbug_Finc_C2.0_I0.2_\d+_\d+.p'
-    rsb_file_templ = 'Elunar_R\d+_Oruleseedbug_Finc_C2.0_I0.2_\d+_\d+.p'
-    pb_file_templ = 'Elunar_R\d+_Operfbug_Finc_C2.0_I0.2_\d+_\d+.p'
-    psb_file_templ = 'Elunar_R\d+_Operfseedbug_Finc_C2.0_I0.2_\d+_\d+.p'
+    mmsbb_file_templ = 'Ehighway_R\d+_Ommseedbugbasic_Finc_C3.6_I0.2_\d+_\d+.p'
+    mmsbe_file_templ = 'Ehighway_R\d+_Ommseedbugext_Finc_C3.6_I0.2_\d+_\d+.p'
+    mmb_file_templ = 'Ehighway_R\d+_Ommbug_Finc_C3.6_I0.2_\d+_\d+.p'
+    mmsb2b_file_templ = 'Ehighway_R\d+_Ommseedbug2bug_Finc_C3.6_I0.2_\d+_\d+.p'
+    fsb_file_templ = 'Ehighway_R\d+_Ofailseedbug_Finc_C3.6_I0.2_\d+_\d+.p'
+    rsb_file_templ = 'Ehighway_R\d+_Oruleseedbug_Finc_C3.6_I0.2_\d+_\d+.p'
+    pb_file_templ = 'Ehighway_R\d+_Operfbug_Finc_C3.6_I0.2_\d+_\d+.p'
+    psb_file_templ = 'Ehighway_R\d+_Operfseedbug_Finc_C3.6_I0.2_\d+_\d+.p'
     
     mmsbb_files, mmsb2b_files, mmsbe_files, mmb_files, fsb_files, rsb_files, pb_files, psb_files = [], [], [], [], [], [], [], []
     for fname in os.listdir("pifuzz_logs"):
@@ -197,8 +200,8 @@ def orcl_evl_highway():
         mmbug_pools.append(pickle.load(open(mmb, "rb"))[1])
         failseedbug_pools.append(pickle.load(open(fsb, "rb"))[1])
         ruleseedbug_pools.append(pickle.load(open(rsb, "rb"))[1])
-        perfbug_pools.append(pickle.load(open(mmb, "rb"))[1])
-        perfseedbug_pools.append(pickle.load(open(mmb, "rb"))[1])
+        perfbug_pools.append(pickle.load(open(pb, "rb"))[1])
+        perfseedbug_pools.append(pickle.load(open(psb, "rb"))[1])
     
     mmsbb_means, mmsbb_stds = process_pools(mmseedbugbasic_pools)
     mmsb2b_means, mmsb2b_stds = process_pools(mmseedbug2bug_pools)
@@ -211,8 +214,8 @@ def orcl_evl_highway():
     
     mean_data = [pb_means, mmb_means, mmsb2b_means, mmsbe_means, fsb_means, psb_means, mmsbb_means, rsb_means]
     std_data = [pb_stds, mmb_stds, mmsb2b_stds, mmsbe_stds, fsb_stds, psb_stds, mmsbb_stds, rsb_stds]
-    labels = ["PerfectBug", "MMBug", "MMSeedBug2Bug" "MMSeedBugExt", "FailureSeedBug", "PerfectSeedBug", "MMSeedBugBasic", "RuleSeedBug"]
-    colors = ["#f963e5", "#b2b200", "#43ce3b", "#344588", "#33fff6", "#f29544", "#e32d2d", "#955a92" ]
+    labels = ["PerfectBug", "MMBug", "MMSeedBug2Bug", "MMSeedBugExt", "FailureSeedBug", "PerfectSeedBug", "MMSeedBugBasic", "RuleSeedBug"]
+    colors = ["#f963e5", "#b2b200", "#43ce3b", "#344588", "#f29544", "#33fff6", "#e32d2d", "#955a92" ]
 
     plot("highway", mean_data, std_data, labels, colors)
 
