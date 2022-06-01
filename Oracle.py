@@ -1,4 +1,5 @@
 import copy
+import time
 import logging
 import numpy as np
 import Mutator
@@ -295,3 +296,38 @@ class PerfectBugOracle(PerfectOracle):
             return 1
         
         return 0
+
+class LunarApproxPerfectSeedBugOracle(PerfectOracle):
+    def __init__(self, game, rand_seed):
+        super().__init__(game, rand_seed)
+
+    def explore(self, fuzz_seed):
+        if not self.game.env_iden == "lunar":
+            print("This oracle implementation is only suitable for Lunar!")
+            exit()
+        
+        env_states = [(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state, 'dummy')]
+        winning_acts = []
+        
+        start_time = time.perf_counter()
+        while len(env_states) > 0:
+            c_hls, rand_st, wa = env_states.pop()
+            winning_acts.append(wa)
+
+            for act in range(4):  # there are 4 available actions in lunar
+                self.setRandAndState(c_hls, rand_state=rand_st)
+                _, _, done, info = self.game.env.step(act)
+                
+                if done:
+                    if info['leg_contact'][0] and info['leg_contact'][1]:
+                        print(winning_acts)
+                        return 0  # the state is winnable
+                else:
+                    _, n_hls, rand_st = self.game.get_state()
+                    env_states.append( (n_hls, rand_st, act) )
+            
+            # 900 seconds is a hyperparameter
+            if (time.perf_counter() - start_time) > 900:
+                return 2  # timeout
+            
+        return 1  # crash is inevitable

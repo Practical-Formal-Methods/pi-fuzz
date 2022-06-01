@@ -1,5 +1,4 @@
 import copy
-import numpy as np
 
 class Seed(object):
     def __init__(self, nn_state, hi_lvl_state, rand_state, gen_trial, gen_time):

@@ -1,12 +1,9 @@
-import time
-
 import numpy as np
-
-from mod_gym import gym
 
 from linetrack.dqn.agent import Agent as LinetrackAgent
 from linetrack.model.model import Linetrack
-from mod_stable_baselines3.stable_baselines3 import DQN, PPO
+from mod_gym import gym
+from mod_stable_baselines3.stable_baselines3 import PPO
 from mod_stable_baselines3.stable_baselines3.common.policies import ActorCriticPolicy
 
 
@@ -34,7 +31,6 @@ class Wrapper():
             env = gym.make('BipedalWalker-v3')
         env.seed(seed)
         self.env = env
-        # self.action_space = range(env.action_space.n)  # Discrete(4)
 
     def create_bipedal_model(self, load_path, r_seed):
         ppo = PPO(env=self.env, seed=r_seed, policy=ActorCriticPolicy)
@@ -44,8 +40,6 @@ class Wrapper():
     def create_lunar_model(self, load_path, r_seed):
         ppo = PPO(env=self.env, seed=r_seed, policy=ActorCriticPolicy)
         model = ppo.load(load_path, env=self.env)
-        # model = PPO.load(load_path, env=self.env)
-        # PPO.set_random_seed(r_seed)
         self.model = model
 
     def create_lunar_environment(self, seed):
@@ -132,11 +126,6 @@ class Wrapper():
 
             reward, next_state, done = self.env_step(act)
 
-            # if self.env_iden == "highway":
-            #     total_reward = self.env.acc_return  # += np.power(GAMMA, num_steps) * reward
-            # else:
-            #     total_reward += reward
-
             all_rews.append(reward)
             full_play.append(act)
 
@@ -147,7 +136,7 @@ class Wrapper():
                 # walker reached end, lander didnt crash, car didnt crash
                 else:
                     final_rew = 100
-                return final_rew, full_play, all_rews # visited_states
+                return final_rew, full_play, all_rews
 
     def eval(self, eval_budget=100):
         tot_rew = 0
@@ -159,8 +148,6 @@ class Wrapper():
                 act = self.model_step(next_state)
                 reward, next_state, done = self.env_step(act)
                 tot_rew += reward
-                if done:
-                    print(tot_rew)
 
-        print(tot_rew / 100)
+        print(tot_rew / eval_budget)
 
