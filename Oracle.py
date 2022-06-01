@@ -234,7 +234,7 @@ class RuleSeedBugOracle(Oracle):
 
 
 class PerfectOracle(Oracle):
-    def magic_oracle(self, env):
+    def perf_oracle(self, env):
         envs = [env]
 
         while len(envs) != 0:
@@ -266,7 +266,7 @@ class PerfectSeedBugOracle(PerfectOracle):
         # if the agent is already winning then no need for exploration
         if org_reward <= 0:
             self.setRandAndState(fuzz_seed.hi_lvl_state, fuzz_seed.rand_state)
-            if self.magic_oracle(self.game.env):
+            if self.perf_oracle(self.game.env):
                 return 1
         
         return 0
@@ -284,7 +284,7 @@ class PerfectBugOracle(PerfectOracle):
         num_perfect_fails = 0
         for rs in range(BUG_CONFIRMATION_BUDGET):
             self.setRandAndState(fuzz_seed.hi_lvl_state, rand_seed=rs)
-            if not self.magic_oracle(self.game.env): num_perfect_fails += 1
+            if not self.perf_oracle(self.game.env): num_perfect_fails += 1
 
         num_policy_fails = 0
         for rs in range(BUG_CONFIRMATION_BUDGET):
