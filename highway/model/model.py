@@ -6,7 +6,7 @@ import itertools
 from matplotlib import colors
 from PIL import Image, ImageDraw
 
-sys.path.append("linetrack/model")
+sys.path.append("highway/model")
 # Project specific inputs
 import constants as c
 from drivers import Grandma, Speed_Maniac, Agent
@@ -28,7 +28,7 @@ neon_green = (128, 255, 0)
 # todo new car positions via constant file -> speeds
 
 
-class Linetrack:
+class Highway:
     def __init__(
         self,
         num_lines,
@@ -530,11 +530,11 @@ class Linetrack:
                 width=2,
             )
 
-        s = Image.open("linetrack/cars/blue.png").convert("RGBA")
+        s = Image.open("highway/cars/blue.png").convert("RGBA")
         s = s.resize((size - 2 * gap, int(s.size[1] * (size - 2 * gap) / s.size[0])))
-        g = Image.open("linetrack/cars/green.png").convert("RGBA")
+        g = Image.open("highway/cars/green.png").convert("RGBA")
         g = g.resize((size - 2 * gap, int(g.size[1] * (size - 2 * gap) / g.size[0])))
-        a = Image.open("linetrack/cars/red.png").convert("RGBA")
+        a = Image.open("highway/cars/red.png").convert("RGBA")
         a = a.resize((size - 2 * gap, int(a.size[1] * (size - 2 * gap) / a.size[0])))
 
         for j, line in enumerate(self.street):
