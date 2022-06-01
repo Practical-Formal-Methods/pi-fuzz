@@ -1,7 +1,7 @@
 import numpy as np
 
-from linetrack.dqn.agent import Agent as LinetrackAgent
-from linetrack.model.model import Linetrack
+from highway.dqn.agent import Agent as HighwayAgent
+from highway.model.model import highway
 from mod_gym import gym
 from mod_stable_baselines3.stable_baselines3 import PPO
 from mod_stable_baselines3.stable_baselines3.common.policies import ActorCriticPolicy
@@ -49,7 +49,7 @@ class Wrapper():
         self.action_space = range(env.action_space.n)  # Discrete(4)
 
     def create_highway_model(self, load_path, r_seed):
-        ag = LinetrackAgent(self.env, r_seed, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
+        ag = HighwayAgent(self.env, r_seed, n_episodes=10000, l_episodes=300, checkpoint_name='Unnamed', eps_start=1.0, eps_end=0.0001,
                   eps_decay=0.999, learning_count=0)
         ag.load(load_path, None)  # second parameter is useless here
         self.model = ag
@@ -59,7 +59,7 @@ class Wrapper():
         num_lines = 2
         length_lines = 100
         ratios = [0.02, 0.1]
-        env = Linetrack(num_lines=num_lines, length_lines=length_lines, rng=rng, mode='line_ratio', ratios=ratios, input_stripe=True)
+        env = highway(num_lines=num_lines, length_lines=length_lines, rng=rng, mode='line_ratio', ratios=ratios, input_stripe=True)
         self.env = env
         self.action_space = env.action_space
 

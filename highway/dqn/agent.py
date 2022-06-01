@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from collections import namedtuple, deque
 import matplotlib.pyplot as plt
 import numpy as np
-import linetrack.model.constants as c
+import highway.model.constants as c
 
-from linetrack.model.model import Linetrack
+from highway.model.model import Highway
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

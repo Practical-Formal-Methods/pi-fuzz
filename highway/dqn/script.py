@@ -2,8 +2,8 @@ import sys
 
 sys.path.append("..")
 import argparse
-from linetrack.dqn.agent import Agent
-from linetrack.model.model import Linetrack
+from highway.dqn.agent import Agent
+from highway.model.model import Highway
 import numpy as np
 
 # environment parameters
@@ -21,7 +21,7 @@ for idx in [agent_id]:  # range(35):
     # set the seed
     env_rng = np.random.default_rng(idx)
 
-    env = Linetrack(
+    env = Highway(
         num_lines=num_lines,
         length_lines=length_lines,
         rng=env_rng,
