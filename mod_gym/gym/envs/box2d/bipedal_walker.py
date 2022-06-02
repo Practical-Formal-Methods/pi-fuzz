@@ -525,15 +525,10 @@ class BipedalWalker(gym.Env, EzPickle):
         terrain_x = self.terrain_x
         terrain_y = self.terrain_y
         terrain_type_poly = self.terrain_type_poly
-        # lidar_p1s, lidar_p2s, lidar_frctn = [], [], []
-        # for ldr in self.lidar:
-        #     lidar_p1s.append((ldr.p1.x, ldr.p1.y))
-        #     lidar_p2s.append(ldr.p2)
-        #     lidar_frctn.append(ldr.fraction)
 
         hi_lvl_state = [(hull_pos.x, hull_pos.y), (hull_vel.x, hull_vel.y), hull_angle, hull_ang_vel,
                         leg_positions, leg_angles, leg_contacts, joint_motor_speeds, joint_max_motor_torques,
-                        leg_ang_vels, leg_vels, terrain_x, terrain_y, terrain_type_poly]  # , lidar_p1s, lidar_p2s, lidar_frctn]
+                        leg_ang_vels, leg_vels, terrain_x, terrain_y, terrain_type_poly]
 
         return nn_state, hi_lvl_state, self.np_random.get_state()  # current random state
 
@@ -645,9 +640,6 @@ class BipedalWalker(gym.Env, EzPickle):
 
         self.lidar_render = (self.lidar_render+1) % 100
         i = self.lidar_render
-        # if i < 2*len(self.lidar):
-        #     l = self.lidar[i] if i < len(self.lidar) else self.lidar[len(self.lidar)-i-1]
-        #     self.viewer.draw_polyline( [l.p1, l.p2], color=(1,0,0), linewidth=1 )
 
         for obj in self.drawlist:
             for f in obj.fixtures:

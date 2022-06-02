@@ -287,25 +287,6 @@ class LunarLander(gym.Env, EzPickle):
         leg.joint = self.world.CreateJoint(rjd)
         return leg
 
-    # def set_state(self, hi_lvl_state):
-    #     lander_pos, lander_vel, n_angle, n_ang_vel, \
-    #     n_contact_l, n_contact_r, lleg_pos, rleg_pos = hi_lvl_state
-
-    #     self.world.DestroyBody(self.lander)
-    #     self.lander = None
-    #     self.lander = self.create_lander((lander_pos.x, lander_pos.y), n_angle, linVel=(lander_vel.x, lander_vel.y), angVel=n_ang_vel)
-
-    #     self.world.DestroyBody(self.legs[0])
-    #     self.world.DestroyBody(self.legs[1])
-    #     lleg_vel = (0, -4)
-    #     rleg_vel = (0, -4)
-    #     lleg_ang = (-1 * 0.05) + n_angle
-    #     rleg_ang = (+1 * 0.05) + n_angle
-    #     lleg = self.create_leg(-1, lleg_vel, lleg_pos, lleg_ang, n_contact_l)
-    #     rleg = self.create_leg(+1, rleg_vel, rleg_pos, rleg_ang, n_contact_r)
-    #     self.legs[0] = lleg
-    #     self.legs[1] = rleg
-
     def get_state(self):
         lander_pos = self.lander.position
         lander_vel = self.lander.linearVelocity
