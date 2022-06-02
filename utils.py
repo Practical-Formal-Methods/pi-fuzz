@@ -1,6 +1,7 @@
 import re
 import os
 import pickle
+import logging
 import matplotlib
 # these parameters are needs to be set, for camera ready plots
 matplotlib.rcParams['pdf.fonttype'] = 42
@@ -214,3 +215,12 @@ def orcl_evl_highway():
     colors = ["#f963e5", "#b2b200", "#43ce3b", "#344588", "#f29544", "#33fff6", "#e32d2d", "#955a92" ]
 
     plot("highway", mean_data, std_data, labels, colors)
+
+
+def setup_logger(name, log_file, level=logging.DEBUG):
+    handler = logging.FileHandler(log_file, mode="w")
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+
+    return logger
