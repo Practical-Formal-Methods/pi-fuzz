@@ -1,7 +1,7 @@
 import numpy as np
 
 from highway.dqn.agent import Agent as HighwayAgent
-from highway.model.model import highway
+from highway.model.model import Highway
 from mod_gym import gym
 from mod_stable_baselines3.stable_baselines3 import PPO
 from mod_stable_baselines3.stable_baselines3.common.policies import ActorCriticPolicy
@@ -59,7 +59,7 @@ class Wrapper():
         num_lines = 2
         length_lines = 100
         ratios = [0.02, 0.1]
-        env = highway(num_lines=num_lines, length_lines=length_lines, rng=rng, mode='line_ratio', ratios=ratios, input_stripe=True)
+        env = Highway(num_lines=num_lines, length_lines=length_lines, rng=rng, mode='line_ratio', ratios=ratios, input_stripe=True)
         self.env = env
         self.action_space = env.action_space
 
