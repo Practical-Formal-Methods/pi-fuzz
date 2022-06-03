@@ -1,6 +1,6 @@
 # π-fuzz: Metamorphic Action Policy Testing Framework
 
-π-fuzz is a metamorphic action policy testing framework based on fuzz testing. Refer to our ISSTA 2022 paper for more detail about the approach. Below, we provide instructions for installing dependencies and replicating the results on a newly created Docker image. Refer to this link to download a ready-to-use Docker image.
+π-fuzz is a metamorphic action policy testing framework implemented as part of our ISSTA 2022 paper _	Metamorphic Relations via Relaxations: An Approach to Obtain Oracles for Action-Policy Testing_. In this document, we provide instructions for installing dependencies for running π-fuzz and replicating the results.
 
 ## Setup
 Here are the 8 steps of making your working environment ready for π-fuzz:
@@ -49,6 +49,8 @@ In the following we provide brief descriptions of important files and folders in
 - `mod_stable_baselines`: Our own fork of [stable_baselines3](https://stable-baselines3.readthedocs.io/en/master/). We created this fork to enable training agents in modified Gym environments.
 
 ## Replicating Results
+
+Refer to this [link](https://hub.docker.com/repository/docker/practicalformalmethods/pi-fuzz) to download a ready-to-use Docker image.
 
 We test π-fuzz on 3 domains: `linetrack`, `lunar` and `bipedal`. For each domain, we consider 6 fuzzer settings in which we change fuzzing type and informed mutations probabilities. For example, for `lunar` domain we run the following experiments:
 
