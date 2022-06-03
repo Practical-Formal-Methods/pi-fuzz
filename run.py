@@ -62,7 +62,7 @@ parser.add_argument("-F", "--fuzz_type", default='inc', choices=['inc', 'non-inc
 parser.add_argument("-O", "--oracle_type", default="mmseedbugbasic")
 parser.add_argument("-C", "--coverage", default="raw", choices=['raw', 'abs'])
 parser.add_argument("-CT", "--coverage_thold", default=2.0, type=float)
-parser.add_argument("-L", "--logfolder", default="")
+parser.add_argument("-L", "--logfolder", default="pifuzz_logs")
 parser.add_argument("-FMB", "--fuzz_mut_bdgt", default=25, type=int)  # 25 is OK for lunar and bipedal
 parser.add_argument("-IP", "--inf_probability", default=0.2, type=float)
 
@@ -80,8 +80,6 @@ inf_prob = args.inf_probability
 logfolder = args.logfolder
 loggername = "fuzz_logger"
 
-if not logfolder:
-    logfolder = "pifuzz_logs"
 if not os.path.exists(logfolder):
     os.makedirs(logfolder)
 
