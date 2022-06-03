@@ -1,18 +1,18 @@
 # π-fuzz: Metamorphic Action Policy Testing Framework
 
-π-fuzz is a metamorphic action policy testing framework implemented as part of our ISSTA 2022 paper _	Metamorphic Relations via Relaxations: An Approach to Obtain Oracles for Action-Policy Testing_. In this document, we provide instructions for installing dependencies for running π-fuzz and replicating the results.
+π-fuzz is a metamorphic action policy testing framework implemented as part of our ISSTA 2022 paper _Metamorphic Relations via Relaxations: An Approach to Obtain Oracles for Action-Policy Testing_. In this document, we provide instructions for installing dependencies for running π-fuzz and replicating the results.
 
 ## Setup
 Here are the 8 steps of making your working environment ready for π-fuzz:
 
 1. After creating a Ubuntu 20.04 installed Docker image, 
-2. Ensure that `Python3.8` and `pip3` are installed.
-4. Install `Cython` as follows: `pip install cython`
-5. Install other required packages as follows: `apt-get install gcc python3-dev python3-dev g++`
-6. Install `conda` package manager by following instructions [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html).
-7. Clone the repository in a desired directory and enter. 
-8. Create a new conda environment with the following command `conda env create -f environment.yml`.
-9. Upon creation activate the environment with `conda activate pi-fuzz`.
+2. Ensure that `Python3` and `pip3` are installed.
+3. Install `conda` package manager by following instructions [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html).
+4. Clone the repository in a desired directory and enter in it. 
+5. Create a new conda environment with the following command `conda env create -f environment.yml`.
+6. Upon creation activate the environment with `conda activate pi-fuzz`.
+
+Now you are ready to run π-fuzz.
 
 ## Getting Started 
 `run.py` is the entry point to π-fuzz. It first launches the fuzzer and then calls the oracle to identify bugs with given configurations. Below parameters determines π-fuzz configurations along with `config.py` file. The settings in `config.py` file were kept the same accross all experiments presentd in the paper. 
@@ -45,19 +45,19 @@ In the following we provide brief descriptions of important files and folders in
 - `EnvWrapper.py`: It is a wrapper used to interact with environments such as creating environment instances, setting the environment to a particualr state ot taking steps.
 - `Seed.py`: Contains seed object.
 - `Scheduler.py`: Contains several schedular instantiations used in fuzzer.
-- `mod_gym`: Our own fork of OpenAI's [Gym](https://github.com/openai/gym). We made changes in `./gym/envs/box2d/lunar_lander.py` and `./gym/envs/box2d/bipedal_walker.py` to accommodate getting and setting states.
-- `mod_stable_baselines`: Our own fork of [stable_baselines3](https://stable-baselines3.readthedocs.io/en/master/). We created this fork to enable training agents in modified Gym environments.
+- `mod_gym`: Our own fork of OpenAI's [Gym](https://github.com/openai/gym) (forked commit hash: `ee5ee3a4a5b9d09219ff4c932a45c4a661778cd7`). We made changes in `./gym/envs/box2d/lunar_lander.py` and `./gym/envs/box2d/bipedal_walker.py` to accommodate getting and setting states.
+- `mod_stable_baselines`: Our own fork of [stable_baselines3](https://stable-baselines3.readthedocs.io/en/master/) (forked commit hash: `503425932f5dc59880f854c4f0db3255a3aa8c1e`). We created this fork to enable training agents in modified Gym environments.
+
+## Testing Your Own Policy
+
+π-fuzz implementation is designed to be modular to allow changes to test policies trained on other benchmarks. For this, one has to extend the wrapper functions such as creating environment, taking a(n) environment/policy step in `EnvWrapper.py`. Other than that, given a state, its relaxation and unrelaxations have to be implemented in `Mutator.py`. Appropriate relaxation and unrelaxation operations depends on the benchmark's nature.
 
 ## Replicating Results
 
-Refer to this [link](https://hub.docker.com/repository/docker/practicalformalmethods/pi-fuzz) to download a ready-to-use Docker image.
+Refer to this [link](https://hub.docker.com/repository/docker/practicalformalmethods/pi-fuzz) to download a ready-to-use Docker image. This image contains π-fuzz repository under `/home` directory. We also set up a conda virtual environment that includes all required dependencies to run π-fuzz. One can activate it with the following command `conda activate pifuzz`. The parameters used in the experiments are clearly stated in the paper. We use random seeds from 42 to 49 in repeated experiments. For instance, the following command has to be executed with these random seeds to obtain all **MMSeedBugBasic** results presented in the paper:
 
-We test π-fuzz on 3 domains: `linetrack`, `lunar` and `bipedal`. For each domain, we consider 6 fuzzer settings in which we change fuzzing type and informed mutations probabilities. For example, for `lunar` domain we run the following experiments:
+`python run.py -E lunar -R 42 -A policies/lunar_org -F inc -O mmseedbugbasic -CT 0.65 -IP 0.2 -FMB 25`
 
-1. `python run.py -E highway -R 123 -A policies/highway_org.pth -F inc -IP 0.2 -CT 3.6 -FMB 3`
-2. `python run.py -E lunar -R 123 -A policies/lunar_org -F inc -CT 0.65 -IP 0.2 -FMB 25`
-3. `python run.py -E bipedal -R 123 -A policies/bipedal_org -F inc -IP 0.2 -CT 2.0 -FMB 25`
+Running this command will take above 24 hours, as there is 24 hours fuzzing campaign in the beginning. For the next oracle type (e.g. `mmbug`) it would take shorter as fuzzing step is not repeated, instead existing data is loaded. Experiment results are saved in specified folder. One can use functions provided in `utils.py` to obtain plots and exact numbers in the tables. Names of the functions are self explanatory.
 
-For running experiments on other domains, provide the corresponding domain keyword after `-E`. For replicating the exact results, run each experiment with random seeds from 1 to 8. Remember to keep `fuzz_config.py` file as default (i.e. `FUZZ_BUDGET=86400` and `SEARCH_BUDGET=1000`). `fuzz_utils.py` provides some useful functions to plot results (i.e. poolsize_over_time, warn_over_time, boxplot).
-
-
+This image also contains all the data collected in our experiments in a zipped file named `pifuzz_exp.zip`. 
