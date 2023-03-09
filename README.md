@@ -3,7 +3,7 @@
 π-fuzz is a metamorphic action policy testing framework implemented as part of our ISSTA 2022 paper [Metamorphic Relations via Relaxations: An Approach to Obtain Oracles for Action-Policy Testing](https://people.mpi-sws.org/~hfeniser/pubs/ISSTA-2022.pdf). In this document, we provide instructions for installing dependencies for running π-fuzz and replicating the results.
 
 ## Setup
-Here are the 8 steps of making your working environment ready for π-fuzz:
+Here are the 6 steps of making your working environment ready for π-fuzz:
 
 1. After creating a Ubuntu 20.04 installed Docker image, 
 2. Ensure that `Python3` and `pip3` are installed.
