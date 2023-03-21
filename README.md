@@ -54,7 +54,7 @@ In the following we provide brief descriptions of important files and folders in
 
 ## Replicating Results
 
-Refer to this [link](https://hub.docker.com/repository/docker/practicalformalmethods/pi-fuzz) to download a ready-to-use Docker image. This image contains π-fuzz repository under `/home` directory. We also set up a conda virtual environment that includes all required dependencies to run π-fuzz. One can activate it with the following command `conda activate pifuzz`. The parameters used in the experiments are clearly stated in the paper. We use random seeds from 42 to 49 in repeated experiments. For instance, the following command has to be executed with these random seeds to obtain all **MMSeedBugBasic** results presented in the paper:
+Refer to this [link](https://zenodo.org/record/7756666#.ZBnAzILMKBQ) to download a ready-to-use Docker image. This image contains π-fuzz repository under `/home` directory. We also set up a conda virtual environment that includes all required dependencies to run π-fuzz. One can activate it with the following command `conda activate pifuzz`. The parameters used in the experiments are clearly stated in the paper. We use random seeds from 42 to 49 in repeated experiments. For instance, the following command has to be executed with these random seeds to obtain all **MMSeedBugBasic** results presented in the paper:
 
 `python run.py -E lunar -R 42 -A policies/lunar_org -F inc -O mmseedbugbasic -CT 0.65 -IP 0.2 -FMB 25`
 
